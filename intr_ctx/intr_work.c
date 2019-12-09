@@ -53,8 +53,9 @@ static int __init intr_drv_init(void)
 
 	init_irq_work(&irqwork, my_irq_work);
 
-	for (i=0; i<10; i++) {
-		pr_info("%s: trigger interrupt work %2d\n", OURMODNAME, i);
+#define NUM_TIMES_TRIGGER 3
+	for (i=0; i<NUM_TIMES_TRIGGER; i++) {
+		pr_info("%s: trigger interrupt work, instance #%02d\n", OURMODNAME, i);
 		/* Kick off printing in irq context */
 		irq_work_queue(&irqwork);
 	}

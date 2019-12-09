@@ -63,7 +63,8 @@ static const struct file_operations my_dev_fops = {
 /* declare & initialize struct miscdevice */
 static struct miscdevice my_miscdevice = {
 	.minor = MISC_DYNAMIC_MINOR, /* dynamically allocate an available minor # */
-	.name = "mydev",
+	.name = "mydev",             /* when misc_register() is invoked, the kernel
+	                               will auto-create device file as /dev/mydev */
 	.fops = &my_dev_fops,        /* functionality */
 };
 

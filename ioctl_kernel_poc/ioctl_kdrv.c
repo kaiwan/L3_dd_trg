@@ -1,41 +1,21 @@
 /*
- * ioctl_kdrv.c v1.0 <date>
- *
- * Simple kernel module to demo using the ioctl method.
- * (c) Kaiwan NB, kaiwanTECH.
- *
- * This program is free software; you can redistribute it
- * and/or modify it under the terms of the GNU Library
- * General Public License as published by the Free Software
- * Foundation; either version 2 of the License, or (at your
- * option) any later version.
- *
- * This program is distributed in the hope that it will be
- * useful, but WITHOUT ANY WARRANTY; without even the
- * implied warranty of MERCHANTABILITY or FITNESS FOR A
- * PARTICULAR PURPOSE. See the GNU Library General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Library
- * General Public License along with this program; if not,
- * write to the Free Software Foundation, Inc.,
- * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
- */
-
-/*
  * ioctl_kdrv.c
  *
- * Simple kernel module that demonstrates simple usage of the ioctl
- * driver method.
+ * Simple kernel module to demo using the ioctl method.
+ * Device node:
+ *  has to be manually created; major # is dynamic,
+ *  minor# is 0.
+ * (c) Kaiwan NB, kaiwanTECH.
+ *
+ * License: dual MIT/GPL
  */
-
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/fs.h>
 #include <linux/ioctl.h>
 #include <linux/version.h>
-#include <asm/uaccess.h>
+#include <linux/uaccess.h>
 #include "ioctl_kdrv.h"
 #include "convenient.h"
 
@@ -183,5 +163,4 @@ module_exit(ioctl_kdrv_cleanup_module);
 MODULE_AUTHOR("My Name");
 MODULE_DESCRIPTION("A simple ioctl kernel usage demo");
 MODULE_LICENSE("GPL");
-
 /* End ioctl_kdrv.c */

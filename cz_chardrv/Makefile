@@ -2,7 +2,6 @@
 # orig src from- 
 # http://www.linux.com/news/software/linux-kernel/23685-the-kernel-newbie-corner-your-first-loadable-kernel-module
 
-
 ifeq ($(KERNELRELEASE),)  
 
 #########################################
@@ -36,7 +35,5 @@ EXTRA_CFLAGS += -DDEBUG
 
 obj-m :=    cz.o
 obj-m +=    cz_enh.o
-#obj-m +=    2cz_enh.o
 
 endif
-

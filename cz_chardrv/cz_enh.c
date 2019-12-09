@@ -8,25 +8,11 @@
  * a) zero source        : minor # 1 : /dev/czero
  * b) sink (null device) : minor # 2 : /dev/cnul
  *
- * Author: Kaiwan N Billimoria <kaiwan@designergraphix.com>
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * Author: Kaiwan N Billimoria
+ * License: MIT/GPLv2
  */
 
 /*#define	DEBUG		1  */ /* set to 0 to turn off debug messages */
-
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/init.h>
@@ -34,7 +20,7 @@
 #include <linux/fs.h>		/* no_llseek */
 #include <linux/version.h>  /* ver macros */
 #include <linux/slab.h>
-#include <asm/uaccess.h>	/* copy_to_user() */
+#include <linux/uaccess.h>	/* copy_to_user() */
 
 #define	DRVNAME		"cz_enh"
 #define CZ_MAJOR  	0    /* 0 => dynamic major number assignment */
@@ -76,11 +62,12 @@ static ssize_t czero_read(struct file *filp, char __user *buf,
 		size_t count, loff_t *offp)
 {
 	char *zbuf;
-	int mcount=count, i=0, loopcount, buf_to=0, rem=0, status=count;
-	u32 pat=0xdeadface;
+	u64 buf_to = 0;
+	int mcount=count, i=0, loopcount, rem=0, status=count;
+	//u32 pat=0xdeadface;
 
-	MSG( "process %s [pid %d] to read %d bytes; buf=0x%08x\n", 
-		current->comm, current->pid, count, (unsigned int)buf );
+	MSG( "process %s [pid %d] to read %ld bytes; buf=0x%lx\n", 
+		current->comm, current->pid, count, (unsigned long)buf );
 
 	if (count > PAGE_SIZE)
 		mcount=PAGE_SIZE;
@@ -114,9 +101,9 @@ static ssize_t czero_read(struct file *filp, char __user *buf,
 	MSG ("loopcount=%d\n",loopcount);
 
 	for (i=0; i<loopcount; i++) {
-		buf_to = (unsigned int)buf + (i*PAGE_SIZE);
-		MSG ("%d: buf_to loc=0x%08x\n",i, buf_to);
-		if( copy_to_user( (void *)buf_to, zbuf, mcount ) ) {
+		buf_to = (unsigned long)buf + (i*PAGE_SIZE);
+		MSG ("%d: buf_to loc=0x%llx\n",i, buf_to);
+		if( copy_to_user((void *)buf_to, zbuf, mcount ) ) {
 			status = -EFAULT;
 			goto out;
 		}
@@ -136,8 +123,8 @@ static ssize_t czero_read(struct file *filp, char __user *buf,
 	if (!rem) 
 		goto out;
 
-	buf_to = (unsigned int)buf + (i*PAGE_SIZE);
-	MSG ("%d: buf_to loc=0x%08x\n",i, buf_to);
+	buf_to = (unsigned long)buf + (i*PAGE_SIZE);
+	MSG ("%d: buf_to loc=0x%llx\n",i, buf_to);
 	if( copy_to_user( (void *)buf_to, zbuf, rem ) ) {
 		status = -EFAULT;
 		goto out;
@@ -151,7 +138,7 @@ out_no_mem:
 static ssize_t czero_write(struct file *filp, const char __user *buf, 
 		size_t count, loff_t *offp)
 {
-	MSG( "process %s [pid %d], count=%d\n", 
+	MSG( "process %s [pid %d], count=%ld\n", 
 			current->comm, current->pid, count);
 	return -ENOSYS;
 }
@@ -164,7 +151,7 @@ static ssize_t czero_write(struct file *filp, const char __user *buf,
 static ssize_t cnul_read(struct file *filp, char __user *buf, 
 		size_t count, loff_t *offp)
 {
-	MSG( "process %s [pid %d], count=%d\n", 
+	MSG( "process %s [pid %d], count=%ld\n", 
 			current->comm, current->pid, count);
 
 	/* as Linux does it, return 0 */
@@ -181,7 +168,7 @@ static ssize_t cnul_read(struct file *filp, char __user *buf,
 static ssize_t cnul_write(struct file *filp, const char __user *buf, 
 		size_t count, loff_t *offp)
 {
-	MSG( "process %s [pid %d], count=%d\n\tjiffies=%lu\n", 
+	MSG( "process %s [pid %d], count=%ld\n\tjiffies=%lu\n", 
 			current->comm, current->pid, count, jiffies );
 	return count;
 	/* a write() to the nul device should always succeed! */

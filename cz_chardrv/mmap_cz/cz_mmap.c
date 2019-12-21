@@ -17,24 +17,8 @@
  * b) sink (null device) : minor # 2 : /dev/cnul
  *
  * Author: Kaiwan N Billimoria <kaiwan@kaiwantech.com>
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * License: MIT
  */
-
-/*#define	DEBUG		1  */ /* set to 0 to turn off debug messages */
-
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/init.h>
@@ -45,7 +29,7 @@
 #include <linux/mm.h>           /* remap_pfn_range */
 #include <asm/uaccess.h>	/* copy_to_user() */
 #include <asm/io.h>		/* virt_to_phys() */
-#include "../../../convenient.h"
+#include "../../convenient.h"
 
 #define	DRVNAME		"cz_mmap"
 #define CZ_MAJOR  	0    /* 0 => dynamic major number assignment */
@@ -81,7 +65,7 @@ QP;
 static ssize_t czero_write(struct file *filp, const char __user *buf, 
 		size_t count, loff_t *offp)
 {
-	MSG( "process %s [pid %d], count=%d\n", 
+	MSG( "process %s [pid %d], count=%ld\n", 
 			current->comm, current->pid, count);
 	return -ENOSYS;
 }
@@ -160,7 +144,7 @@ out_no_mem:
 static ssize_t cnul_read(struct file *filp, char __user *buf, 
 		size_t count, loff_t *offp)
 {
-	MSG( "process %s [pid %d], count=%d\n", 
+	MSG( "process %s [pid %d], count=%ld\n", 
 			current->comm, current->pid, count);
 
 	/* as Linux does it, return 0 */
@@ -177,7 +161,7 @@ static ssize_t cnul_read(struct file *filp, char __user *buf,
 static ssize_t cnul_write(struct file *filp, const char __user *buf, 
 		size_t count, loff_t *offp)
 {
-	MSG( "process %s [pid %d], count=%d\n\tjiffies=%lu\n", 
+	MSG( "process %s [pid %d], count=%ld\n\tjiffies=%lu\n", 
 			current->comm, current->pid, count, jiffies );
 	return count;
 	/* a write() to the nul device should always succeed! */
@@ -271,4 +255,4 @@ module_param(cz_major, int, 0); /* 0 => param won't show up in sysfs,
 MODULE_PARM_DESC(cz_major, "Major number to attempt to use");
 MODULE_AUTHOR("Kaiwan");
 MODULE_DESCRIPTION("Simple (demo) null and zero memory driver driver");
-MODULE_LICENSE("GPL");
+MODULE_LICENSE("Dual MIT/GPL");

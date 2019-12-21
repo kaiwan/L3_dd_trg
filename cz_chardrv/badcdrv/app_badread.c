@@ -3,21 +3,7 @@
  * Test bed for demo drivers
  *
  * Author: Kaiwan N Billimoria <kaiwan@kaiwantech.com>
- *
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * License: MIT
  */
 #include <stdio.h>
 #include <unistd.h>
@@ -32,7 +18,6 @@
 #define FLGS		O_RDONLY
 #define DMODE		0
 #define SZ		1024
-
 
 void sig( int signum )
 {
@@ -66,7 +51,7 @@ int main(int argc, char **argv)
 
 	num = atoi(argv[2]);
 	if ((num < 0) || (num > INT_MAX)) {
-		fprintf(stderr,"%s: number of bytes '%d' invalid.\n", argv[0], num);
+		fprintf(stderr,"%s: number of bytes '%ld' invalid.\n", argv[0], num);
 		close (fd);
 		exit (1);
 	}

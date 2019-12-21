@@ -24,8 +24,7 @@ else
 
 $(info Building with KERNELRELEASE = ${KERNELRELEASE}) 
 EXTRA_CFLAGS += -DDEBUG
-#obj-m :=    cz_mmap.o
-obj-m +=    2cz_mmap.o
+obj-m :=    cz_mmap.o
 
 endif
 

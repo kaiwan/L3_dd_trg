@@ -1,7 +1,5 @@
 /*
  * badcdrv.c
- *
- *
  */
 #include <linux/init.h>
 #include <linux/kernel.h>
@@ -10,7 +8,7 @@
 #include <linux/sched.h>
 #include <linux/fs.h>
 #include <linux/slab.h>
-#include <asm/uaccess.h>
+#include <linux/uaccess.h>
 #include <linux/cdev.h>
 
 #define	DRVNAME			"badcdrv"	// the device nodes will be named /dev/<DRVNAME>.<minor#>
@@ -43,7 +41,8 @@ static ssize_t badread(struct file *filp, char __user *buf,
 	if (count > PAGE_SIZE) // simplification
 		count = PAGE_SIZE;
 
-	MSG("\n-----PID %d. userspace dest addr = 0x%08x\n", current->tgid, (unsigned int)buf);
+	MSG("\n-----PID %d. userspace dest addr = %pK (0x%lx)\n",
+		current->tgid, buf, (unsigned long)buf);
 	kbuf = kmalloc (count, GFP_KERNEL);
 	if (!kbuf) {
 		ret = -ENOMEM;

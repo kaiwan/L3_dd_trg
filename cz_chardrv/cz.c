@@ -76,7 +76,7 @@ static ssize_t czero_read(struct file *filp, char __user *buf,
 	}
 	memset (zbuf, 0, count);
 
-	MSG("process %s [pid %d] to read %d bytes\n", 
+	MSG("process %s [pid %d] to read %ld bytes\n", 
 			current->comm, current->pid, count );
 
 	if (copy_to_user (buf, zbuf, count)) {

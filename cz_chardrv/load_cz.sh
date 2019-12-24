@@ -10,23 +10,9 @@
 # 	--help: show this help screen
 #
 # * Author: Kaiwan N Billimoria <kaiwan@designergraphix.com>
-# *
-# *
-# * This program is free software; you can redistribute it and/or modify
-# * it under the terms of the GNU General Public License as published by
-# * the Free Software Foundation; either version 2 of the License, or
-# * (at your option) any later version.
-# *
-# * This program is distributed in the hope that it will be useful,
-# * but WITHOUT ANY WARRANTY; without even the implied warranty of
-# * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# * GNU General Public License for more details.
-# *
-# * You should have received a copy of the GNU General Public License
-# * along with this program; if not, write to the Free Software
-# * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+# * License: Dual MIT/GPL
 
-
+name=$(basename $0)
 # Configuration variables
 DEV1="/dev/czero"
 DEV2="/dev/cnul"
@@ -35,18 +21,22 @@ PERMS="666"	# for the device files DEV1 and DEV2
 MINOR_CZ=1
 MINOR_CNUL=2
 
+# creat_dev
 # Refresh the device nodes
+# Parameters:
+#  $1 : token to search for (typically the driver name)
 function creat_dev() {
-	echo "Creating device files $DEV1 and $DEV2.."
+	[ $# -ne 1 ] && return
+	local devnm=$1
+	echo "Creating device files $DEV1 and $DEV2 for driver \"${devnm}\" .."
 
 	# Get dynamic major
-	# Assumption: the name of the driver has "cz"
-	MAJOR=`grep "cz" /proc/devices | awk '{print $1}'`
+	MAJOR=$(grep -w "${devnm}" /proc/devices | awk '{print $1}')
 	if [ -z $MAJOR ]; then
-		echo "$0: Could not get major number, aborting.."
+		echo "${name}: Could not get major number, aborting.."
 		exit 1
 	fi
-	echo "$0: MAJOR number is $MAJOR"
+	echo "${name}: MAJOR number is $MAJOR"
 
 	# remove any stale instances
 	rm $DEV1 2>/dev/null
@@ -66,7 +56,7 @@ function load_dev() {
 	/sbin/rmmod $KMOD 2>/dev/null	# in case it's already loaded
 
 	/sbin/insmod $KMOD || {
-		echo "insmod failure.."
+		echo "${name}: insmod failure.."
 		exit 1
 	}
 
@@ -110,7 +100,10 @@ case "$1" in
    -c)
 	echo "Loading module and creating device files for device $DEV now.."
 	load_dev 
-	creat_dev 
+	# Get just the driver name (rm the extension)
+	devnm=$(basename ${KMOD})
+	devnm2="${devnm%.*}"
+	creat_dev ${devnm2}
 	;;	# falls thru to the load..
    -l)
 	echo "Loading device $DEV now.."

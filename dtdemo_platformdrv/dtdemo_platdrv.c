@@ -1,8 +1,25 @@
-
+/* 
+ * dtdemo_platdrv.c
+ *
+ * A platform driver (for a pseudo non-existant platform device); just to
+ * demonstrate that what OF properties have been put in the Device Tree can
+ * be retrieved and displayed in the platform driver!
+ * Tested by modifying the DT of the Raspberry Pi 3B+.
+ *
+ * Kaiwan NB
+ */
 #include <linux/module.h>
 #include <linux/fs.h>
 #include <linux/platform_device.h>
+
+//--- copy_[to|from]_user()
+#include <linux/version.h>
+#if LINUX_VERSION_CODE > KERNEL_VERSION(4,11,0)
 #include <linux/uaccess.h>
+#else
+#include <asm/uaccess.h>
+#endif
+
 #include <linux/miscdevice.h>
 #include <linux/delay.h>
 #include <linux/of.h>

@@ -27,7 +27,15 @@
 #include <linux/version.h>      /* ver macros */
 #include <linux/slab.h>		/* kmalloc */
 #include <linux/mm.h>           /* remap_pfn_range */
-#include <asm/uaccess.h>	/* copy_to_user() */
+
+//--- copy_[to|from]_user()
+#include <linux/version.h>
+#if LINUX_VERSION_CODE > KERNEL_VERSION(4,11,0)
+#include <linux/uaccess.h>
+#else
+#include <asm/uaccess.h>
+#endif
+
 #include <asm/io.h>		/* virt_to_phys() */
 #include "../../convenient.h"
 

@@ -20,7 +20,14 @@
 #include <linux/fs.h>		/* no_llseek */
 #include <linux/version.h>  /* ver macros */
 #include <linux/slab.h>
-#include <linux/uaccess.h>	/* copy_to_user() */
+
+//--- copy_[to|from]_user()
+#include <linux/version.h>
+#if LINUX_VERSION_CODE > KERNEL_VERSION(4,11,0)
+#include <linux/uaccess.h>
+#else
+#include <asm/uaccess.h>
+#endif
 
 #define	DRVNAME		"cz_enh"
 #define CZ_MAJOR  	0    /* 0 => dynamic major number assignment */

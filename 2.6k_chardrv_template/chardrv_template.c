@@ -9,7 +9,15 @@
 #include <linux/sched.h>
 #include <linux/fs.h>
 #include <linux/slab.h>
+
+// copy_[to|from]_user()
+#include <linux/version.h>
+#if LINUX_VERSION_CODE > KERNEL_VERSION(4,11,0)
+#include <linux/uaccess.h>
+#else
 #include <asm/uaccess.h>
+#endif
+
 #include <linux/cdev.h>
 
 #define	DRVNAME			"chardrv"	// the device nodes will be named /dev/<DRVNAME>.<minor#>

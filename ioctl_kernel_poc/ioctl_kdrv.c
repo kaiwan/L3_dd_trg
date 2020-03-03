@@ -15,7 +15,15 @@
 #include <linux/fs.h>
 #include <linux/ioctl.h>
 #include <linux/version.h>
+
+//--- copy_[to|from]_user()
+#include <linux/version.h>
+#if LINUX_VERSION_CODE > KERNEL_VERSION(4,11,0)
 #include <linux/uaccess.h>
+#else
+#include <asm/uaccess.h>
+#endif
+
 #include "ioctl_kdrv.h"
 #include "convenient.h"
 

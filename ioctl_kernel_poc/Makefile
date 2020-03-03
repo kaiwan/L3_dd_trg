@@ -22,6 +22,7 @@ install:
 	$(MAKE) -C $(KDIR) M=$(PWD) modules_install
 clean:
 	$(MAKE) -C $(KDIR) SUBDIRS=$(PWD) clean
+	rm -fv ioctl_user_test 2>/dev/null
 
 else
 

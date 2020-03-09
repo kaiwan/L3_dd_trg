@@ -1,5 +1,5 @@
 /*
- * intr_work.c
+ * irq_work.c
  * Emulate interrupt handling by using the irq_work* functionality..
  * 
  * Procedure:
@@ -13,7 +13,7 @@
 #include <linux/irq_work.h>
 #include "../convenient.h"
 
-#define OURMODNAME    "intr_work"
+#define OURMODNAME    "irq_work"
 
 /* Module parameters */
 static int sleep_in_intrctx;
@@ -22,6 +22,8 @@ MODULE_PARM_DESC(sleep_in_intrctx,
 "Parameter to control whether to (stupidly) attempt sleeping in interrupt context! [default=0]; \
 pass 1 to attempt to and thus create a Bug!");
 
+MODULE_AUTHOR("Kaiwan NB, kaiwanTECH");
+MODULE_DESCRIPTION("A simple demo of running in interrupt context via the irq_work");
 MODULE_LICENSE("Dual MIT/GPL");
 
 static struct irq_work irqwork;

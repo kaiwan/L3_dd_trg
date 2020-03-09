@@ -13,7 +13,7 @@ else
    KDIR ?= /lib/modules/$(shell uname -r)/build 
 endif
 
-obj-m          += intr_work.o
+obj-m          += irq_work.o
 EXTRA_CFLAGS   += -DDEBUG
 #$(info Building for: ARCH=arm CROSS_COMPILE= EXTRA_CFLAGS=)
 

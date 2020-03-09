@@ -44,7 +44,13 @@ static struct platform_device plat0 = {
 #endif
 	.id = 0,
 	.dev = {
-		.platform_data = NULL,
+		.platform_data = NULL, /* (the old deprecated way):
+		     Plug in the device's resources here: memory ranges/IRQs/
+		      IOports/DMA channels/clocks/etc + optionally 'data'
+		      (typically a private structure).
+                     The new way is of course to use the Device Tree (DTS file)
+		     to specify both the 'data' and platform-specific resources
+		     */
 		.release = plat0_release,
 	},
 };
@@ -74,29 +80,33 @@ typedef struct MyCtx {
 
 /*--------------------------------------------------------------------*/
 
-static int platdev_probe(struct platform_device *platdev)
+static int platdev_probe(struct platform_device *pdev)
 {
-	pstMyCtx pstCtx = platdev->dev.platform_data;
-	struct device *dev = &platdev->dev;
+	struct device *dev = &pdev->dev;
+	pstMyCtx pstCtx = dev_get_platdata(&pdev->dev);
+	/* could have done the above directly with:
+	 *  pstMyCtx pstCtx = pdev->dev.platform_data;
+	 * .. but using the kernel helper is recommended
+	 */
 
 	pstCtx->data_xform = 100;
-	dev_dbg(dev, "Platform driver: probe method invoked\n");
+	dev_dbg(dev, "platform driver: probe method invoked\n");
 	return 0;
 }
 
-static int platdev_remove(struct platform_device *platdev)
+static int platdev_remove(struct platform_device *pdev)
 {
-	pstMyCtx pstCtx = platdev->dev.platform_data;
-	struct device *dev = &platdev->dev;
+	pstMyCtx pstCtx = pdev->dev.platform_data;
+	struct device *dev = &pdev->dev;
 
-	dev_dbg(dev, "Platform driver:remove method invoked\n data_xform=%d\n",
+	dev_dbg(dev, "platform driver:remove method invoked\n data_xform=%d\n",
 	    pstCtx->data_xform);
 	return 0;
 }
 
-static void plat0_release(struct device *platdev)
+static void plat0_release(struct device *dev)
 {
-	dev_dbg(platdev, "Platform device: release method invoked\n");
+	dev_dbg(dev, "platform device: release method invoked\n");
 }
 
 static int __init platdev_init(void)

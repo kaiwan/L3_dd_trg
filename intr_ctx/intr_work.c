@@ -56,7 +56,7 @@ static int __init intr_drv_init(void)
 #define NUM_TIMES_TRIGGER 3
 	for (i=0; i<NUM_TIMES_TRIGGER; i++) {
 		pr_info("%s: trigger interrupt work, instance #%02d\n", OURMODNAME, i);
-		/* Kick off printing in irq context */
+		/* Enqueue &irqwork on the current cpu */
 		irq_work_queue(&irqwork);
 	}
 

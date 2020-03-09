@@ -87,7 +87,7 @@ static int chardev_registration(void)
 	}
 
 	for (i=0 ; i<DEV_COUNT; i++) {
-		cdev_init (&chardrv_devp[i].cdev, &cdrv_open_fops);
+		cdev_init(&chardrv_devp[i].cdev, &cdrv_open_fops);
 		chardrv_devp[i].cdev.owner = THIS_MODULE;
 		chardrv_devp[i].cdev.ops = &cdrv_open_fops;
 		res = cdev_add (&chardrv_devp[i].cdev, MKDEV(MAJOR(chardrv_dev_number), 
@@ -104,7 +104,7 @@ static int chardev_registration(void)
 	 * !Note! : APIs class_create, device_create, etc exported as EXPORT_SYMBOL_GPL(...); 
 	 * so will not show up unless the module license is GPL.
 	 */
-	chardrv_class = class_create (THIS_MODULE, DRVNAME);
+	chardrv_class = class_create(THIS_MODULE, DRVNAME);
 	for ( i=0 ; i<DEV_COUNT; i++) {
 		if (!device_create(chardrv_class, NULL, MKDEV(MAJOR(chardrv_dev_number), 
 		      MINOR(chardrv_dev_number)+i), NULL, "%s.%d", DRVNAME, i)) {

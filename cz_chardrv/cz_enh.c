@@ -11,8 +11,6 @@
  * Author: Kaiwan N Billimoria
  * License: MIT/GPLv2
  */
-
-/*#define	DEBUG		1  */ /* set to 0 to turn off debug messages */
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/init.h>
@@ -71,9 +69,8 @@ static ssize_t czero_read(struct file *filp, char __user *buf,
 	char *zbuf;
 	u64 buf_to = 0;
 	int mcount=count, i=0, loopcount, rem=0, status=count;
-	//u32 pat=0xdeadface;
 
-	MSG( "process %s [pid %d] to read %ld bytes; buf=0x%lx\n", 
+	MSG("process %s [pid %d] to read %ld bytes; buf=0x%lx\n", 
 		current->comm, current->pid, count, (unsigned long)buf );
 
 	if (count > PAGE_SIZE)
@@ -83,26 +80,27 @@ static ssize_t czero_read(struct file *filp, char __user *buf,
 	 * API ref: http://gnugeneration.com/books/linux/2.6.20/kernel-api/re241.html
 	 */
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,14)
-	if ( (zbuf=kzalloc (mcount, GFP_KERNEL)) == NULL) {
+	if ((zbuf=kzalloc (mcount, GFP_KERNEL)) == NULL) {
 #else
-	if ( (zbuf=kmalloc (mcount, GFP_KERNEL)) == NULL) {
+	if ((zbuf=kmalloc (mcount, GFP_KERNEL)) == NULL) {
 #endif
 		status = -ENOMEM;
 		goto out_no_mem;
 	}
 #if LINUX_VERSION_CODE <= KERNEL_VERSION(2,6,14)
-	memset (zbuf, 0, mcount);
+	memset(zbuf, 0, mcount);
 #endif
 
-//	memset (zbuf, pat, mcount); // bug! memset fills only a byte..
+#define FILL_PATTERN   0
+#ifdef FILL_PATTERN == 1
 	for (i=0; i<mcount/4;i++) { // done for little-endian
 		zbuf[(i*4)+0]=0xce;
 		zbuf[(i*4)+1]=0xfa;
 		zbuf[(i*4)+2]=0xad;
 		zbuf[(i*4)+3]=0xde;
 	}
-	print_hex_dump_bytes (" ", DUMP_PREFIX_OFFSET, zbuf, mcount/4);
-
+	print_hex_dump_bytes(" ", DUMP_PREFIX_OFFSET, zbuf, mcount/4);
+#endif
 	/* Loop abs(count/PAGE_SIZE) times */
 	loopcount=count/PAGE_SIZE;
 	MSG ("loopcount=%d\n",loopcount);
@@ -126,13 +124,13 @@ static ssize_t czero_read(struct file *filp, char __user *buf,
 
 	/* Remaining bytes to fill */
 	rem = count % PAGE_SIZE;
-	MSG ("rem=%d\n",rem);
+	MSG("rem=%d\n",rem);
 	if (!rem) 
 		goto out;
 
 	buf_to = (unsigned long)buf + (i*PAGE_SIZE);
-	MSG ("%d: buf_to loc=0x%llx\n",i, buf_to);
-	if( copy_to_user( (void *)buf_to, zbuf, rem ) ) {
+	MSG("%d: buf_to loc=0x%llx\n",i, buf_to);
+	if (copy_to_user((void *)buf_to, zbuf, rem)) {
 		status = -EFAULT;
 		goto out;
 	}
@@ -145,7 +143,7 @@ out_no_mem:
 static ssize_t czero_write(struct file *filp, const char __user *buf, 
 		size_t count, loff_t *offp)
 {
-	MSG( "process %s [pid %d], count=%ld\n", 
+	MSG("process %s [pid %d], count=%ld\n", 
 			current->comm, current->pid, count);
 	return -ENOSYS;
 }
@@ -158,7 +156,7 @@ static ssize_t czero_write(struct file *filp, const char __user *buf,
 static ssize_t cnul_read(struct file *filp, char __user *buf, 
 		size_t count, loff_t *offp)
 {
-	MSG( "process %s [pid %d], count=%ld\n", 
+	MSG("process %s [pid %d], count=%ld\n", 
 			current->comm, current->pid, count);
 
 	/* as Linux does it, return 0 */
@@ -175,7 +173,7 @@ static ssize_t cnul_read(struct file *filp, char __user *buf,
 static ssize_t cnul_write(struct file *filp, const char __user *buf, 
 		size_t count, loff_t *offp)
 {
-	MSG( "process %s [pid %d], count=%ld\n\tjiffies=%lu\n", 
+	MSG("process %s [pid %d], count=%ld\n\tjiffies=%lu\n", 
 			current->comm, current->pid, count, jiffies );
 	return count;
 	/* a write() to the nul device should always succeed! */
@@ -197,7 +195,7 @@ static struct file_operations cnul_fops = {
 
 static int cz_open(struct inode * inode, struct file * filp)
 {
-	MSG( "Device node with minor # %d being used\n", iminor(inode));
+	MSG("Device node with minor # %d being used\n", iminor(inode));
 
 	switch (iminor(inode)) {
 		case 1:
@@ -266,4 +264,4 @@ module_param(cz_major, int, 0); /* 0 => param won't show up in sysfs,
 MODULE_PARM_DESC(cz_major, "Major number to attempt to use");
 MODULE_AUTHOR("Kaiwan");
 MODULE_DESCRIPTION("Simple (demo) null and zero memory driver driver");
-MODULE_LICENSE("GPL");
+MODULE_LICENSE("Dual MIT/GPL");

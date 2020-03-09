@@ -70,7 +70,7 @@ static ssize_t czero_read(struct file *filp, char __user *buf,
 	if (count > MAX_READ_COUNT)
 		count = MAX_READ_COUNT;
 	
-	/* kzalloc() not supported on RHEL5's kernel ver */
+	/* kzalloc() not supported on RHEL4 2.6.14 kernel */
 #if 0
 	if ((zbuf = kzalloc (count, GFP_KERNEL)) == NULL ) {
 		status = -ENOMEM;

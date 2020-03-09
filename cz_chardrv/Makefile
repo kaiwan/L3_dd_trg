@@ -26,7 +26,7 @@ build:
 install:
 	$(MAKE) -C $(KERNELDIR) M=$(PWD) modules_install
 clean:
-	$(MAKE) -C $(KERNELDIR) SUBDIRS=$(PWD) clean
+	$(MAKE) -C $(KERNELDIR) M=$(PWD) clean
 
 else
 

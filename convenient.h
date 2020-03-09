@@ -227,7 +227,7 @@ static inline void beep(int what)
 /*------------ DELAY_SEC ----------------------------------
  * Delays execution for n seconds.
  * MUST be called from process context when safe to sleep!
- *---------------------------------------------------------/
+ *---------------------------------------------------------*/
 #define DELAY_SEC(val)                                  \
 {                                                       \
 	if (!in_interrupt()) {	                        \

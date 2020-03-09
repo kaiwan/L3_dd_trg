@@ -224,10 +224,10 @@ static inline void beep(int what)
 /*------------------------------------------------------------------------*/
 
 #ifdef __KERNEL__
-/*------------ DELAY_SEC -------------------------*
+/*------------ DELAY_SEC ----------------------------------
  * Delays execution for n seconds.
- * MUST be called from process context.
- *------------------------------------------------*/
+ * MUST be called from process context when safe to sleep!
+ *---------------------------------------------------------/
 #define DELAY_SEC(val)                                  \
 {                                                       \
 	if (!in_interrupt()) {	                        \

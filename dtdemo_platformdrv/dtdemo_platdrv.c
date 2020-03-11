@@ -6,7 +6,8 @@
  * be retrieved and displayed in the platform driver!
  * Tested by modifying the DT of the Raspberry Pi 3B+.
  *
- * Kaiwan NB
+ * Kaiwan NB, kaiwanTECH
+ * Dual MIT/GPL
  */
 #include <linux/module.h>
 #include <linux/fs.h>
@@ -28,10 +29,11 @@
 
 int dtdemo_platdev_probe(struct platform_device *pdev)
 {
+	struct device *dev = &pdev->dev;
 	const char *prop = NULL;
 	int len = 0;
 
-	pr_info("%s: platform driver probe enter\n", DRVNAME);
+	dev_dbg(dev, "platform driver probe enter\n");
 	prop = of_get_property(pdev->dev.of_node, "aproperty", &len);
 	if (!prop) {
 		pr_warn("%s: getting DT property failed\n", DRVNAME);
@@ -43,7 +45,9 @@ int dtdemo_platdev_probe(struct platform_device *pdev)
 
 int dtdemo_platdev_remove(struct platform_device *pdev)
 {
-	pr_info("%s: platform driver remove\n", DRVNAME);
+	struct device *dev = &pdev->dev;
+
+	dev_dbg(dev, "platform driver remove\n");
 	return 0;
 }
 
@@ -61,8 +65,8 @@ static struct platform_driver my_platform_driver = {
 	.remove = dtdemo_platdev_remove,
 	.driver = {
 		.name = "dtdemo_platdev", /* platform drv driver name must
-		  EXACTLY match the DT 'compatible' property for binding to occur;
-		  then, the probe method is invoked!  */
+	       EXACTLY match the DT 'compatible' property for binding to occur;
+	       then, this module is loaded up and it's probe method invoked! */
 		.of_match_table = my_of_ids,
 		.owner = THIS_MODULE,
 	}
@@ -79,9 +83,8 @@ static int dtdemo_platdrv_init(void)
 	if (ret_val !=0) {
 		pr_err("platform value returned %d\n", ret_val);
 		return ret_val;
-
 	}
-	return 0;
+	return 0;	/* success */
 }
 
 static void dtdemo_platdrv_cleanup(void)
@@ -93,6 +96,7 @@ static void dtdemo_platdrv_cleanup(void)
 module_init(dtdemo_platdrv_init);
 module_exit(dtdemo_platdrv_cleanup);
 
-MODULE_LICENSE("GPL");
+MODULE_LICENSE("Dual MIT/GPL");
 MODULE_AUTHOR("Kaiwan N Billimoria");
-MODULE_DESCRIPTION("Demo: setting up a DT node, so that the platform drv can get bound");
+MODULE_DESCRIPTION(
+"Demo: setting up a DT node, so that this platform drv can get bound");

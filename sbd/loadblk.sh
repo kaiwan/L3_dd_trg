@@ -6,6 +6,10 @@ DISKNAME=sblock0
 MOUNTPT=/mnt/tmp
 NSECT=204800  # 100 MB
 
+[ ! -f ${DRVNAME}.ko ] && {
+	echo "$0: block driver ${DRVNAME}.ko not built? aborting..."
+	exit 1
+}
 if [ $(id -u) -ne 0 ]; then
 	echo "$0: must run as root."
 	exit 1

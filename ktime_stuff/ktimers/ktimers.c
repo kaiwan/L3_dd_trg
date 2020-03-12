@@ -30,6 +30,7 @@ static void ding(struct timer_list *timr)
 {
 	struct kdata *mykd = from_timer(mykd, timr, tmr);
 
+	PRINT_CTX();
 	pr_info("%s:%s()! timed out... data=%d\n",
 		OURMODNAME, __func__, mykd->data--);
 

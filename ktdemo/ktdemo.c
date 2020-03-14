@@ -10,7 +10,7 @@
 #include <linux/sched/signal.h> // signal_pending()
 #include <linux/signal.h>       // allow_signal()
 #include <linux/kthread.h>
-#include "../../convenient.h"
+#include "../convenient.h"
 
 #define MODULE_NAME	"ktdemo"
 struct task_struct *gKthrd;

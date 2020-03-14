@@ -14,6 +14,7 @@ else
 endif
 
 obj-m          += ktimers.o
+obj-m          += ktimers_buggy.o
 EXTRA_CFLAGS   += -DDEBUG
 $(info Building for: ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} EXTRA_CFLAGS=${EXTRA_CFLAGS})
 

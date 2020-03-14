@@ -19,7 +19,7 @@ taskset 01 trace-cmd record ${EV_CLASSES} -v -e *vm* \
 rm -f ${FTRC_REPORT2}
 # -l => latency format
 #setup_report_header ${FTRC_REPORT2}
-trace-cmd report -l -i ${CMD2_RAW_TRC_FILE} >> ${FTRC_REPORT2}
+trace-cmd report -l -i ${CMD2_RAW_TRC_FILE} > ${FTRC_REPORT2}
 }
 
 ### 'main'
@@ -41,6 +41,7 @@ df |grep -q "^/dev/sblock0p1" || {
 }
 
 sudo dd if=/dev/urandom of=/mnt/tmp/dest bs=1024 count=10
+sleep 2
 run_trace_cmd
 ls -lh ${FTRC_REPORT2}
 exit 0

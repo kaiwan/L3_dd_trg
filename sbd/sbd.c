@@ -1,5 +1,6 @@
 /*
- * A sample, extra-simple block driver. Updated for kernel 2.6.31.
+ * A sample, extra-simple block driver.
+ * Updated for kernel vers upto 4.19.
  *
  * Src URL:
  * http://blog.superpat.com/2010/05/04/a-simple-block-driver-for-linux-kernel-2-6-31/
@@ -10,9 +11,10 @@
  * Minor mods:
  *  - instrumentation (configurable printks, stack dump..)
  *  - verbose deconstruction of IO requests, displaying the BIO / biovec's / segments
- *  - tested on: 
-                 x86-64 Ubuntu 18.04 LTS running 4.15.0-88-generic
-                 x86-32 2.6.35
+ *  - tested on:
+                 x86-64 Ubuntu 18.04 LTS w/ 4.15.0-88-generic
+				 Raspberry Pi 3B+ (ARM Cortex A-53) w/ 4.19.97-v7+
+				 x86-32 2.6.35
                  x86 (Ubuntu 11.10) 3.0.0-16-generic-pae
                  ARM Linux (QEMU) kernel ver 3.1.5 and 3.2.21
  *   -kaiwan.

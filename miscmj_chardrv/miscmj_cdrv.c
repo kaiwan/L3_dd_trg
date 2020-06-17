@@ -10,6 +10,7 @@
 #include <linux/miscdevice.h>
 
 #define MYDRVNAME    "miscdrv"
+MODULE_LICENSE("Dual MIT/GPL");
 
 static struct device *dev;
 
@@ -67,7 +68,7 @@ static const struct file_operations my_dev_fops = {
 static struct miscdevice my_miscdevice = {
 	.minor = MISC_DYNAMIC_MINOR, /* dynamically allocate an available minor # */
 	.name = DEVNODENM,           /* when misc_register() is invoked, the kernel
-	                               will auto-create device file as /dev/miscdev */
+	                               will auto-create device file as /dev/miscdrv */
 	.mode = 0666,                  /* ... with perms set as specified here */
 	.fops = &my_dev_fops,        /* functionality */
 };
@@ -99,5 +100,3 @@ static void __exit miscdrv_exit(void)
 
 module_init(miscdrv_init);
 module_exit(miscdrv_exit);
-
-MODULE_LICENSE("GPL");

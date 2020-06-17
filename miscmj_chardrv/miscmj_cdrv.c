@@ -68,7 +68,7 @@ static const struct file_operations my_dev_fops = {
 static struct miscdevice my_miscdevice = {
 	.minor = MISC_DYNAMIC_MINOR, /* dynamically allocate an available minor # */
 	.name = DEVNODENM,           /* when misc_register() is invoked, the kernel
-	                               will auto-create device file as /dev/miscdrv */
+	                               will auto-create device file as /dev/miscdev */
 	.mode = 0666,                  /* ... with perms set as specified here */
 	.fops = &my_dev_fops,        /* functionality */
 };
@@ -86,7 +86,8 @@ static int __init miscdrv_init(void)
 		return ret_val;
 	}
 	dev = my_miscdevice.this_device;
-	dev_dbg(dev, "dev ptr = %pK; device node: /dev/%s\n", dev, DEVNODENM);
+	dev_dbg(dev, "dev ptr = 0x%pK [actual=0x%lx]; device node: /dev/%s\n",
+			dev, (unsigned long)dev, DEVNODENM);
 	return 0;
 }
 

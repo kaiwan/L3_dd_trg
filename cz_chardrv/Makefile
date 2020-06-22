@@ -27,8 +27,8 @@ else
   KDIR ?= /lib/modules/$(shell uname -r)/build
 endif
 
-obj-m          += cz.o
-#obj-m          += cz_enh.o
+#obj-m          += cz.o
+obj-m          += cz_enh.o
 EXTRA_CFLAGS   += -DDEBUG
 
 all:
@@ -39,8 +39,10 @@ all:
 install:
 	@echo
 	@echo "-- installing --"
+	@echo "pwd = $(shell pwd)"
 	@echo
-	make -C $(KDIR) M=$(PWD) modules_install
+	make -C $(KDIR) M=$(shell pwd) modules_install
+	#make -C $(KDIR) M=$(PWD) modules_install
 clean:
 	@echo
 	@echo "-- cleaning --"

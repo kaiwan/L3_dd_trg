@@ -86,7 +86,10 @@ static ssize_t czero_read(struct file *filp, char __user *buf,
 	}
 	memset(zbuf, 0, count);
 
-	MSG("process %s [pid %d] to read %ld bytes\n",
+	/* TIP: for portability between 32 and 64-bit, for size_t use %zu, for
+	 * ssize_t use %zd
+	 */
+	MSG("process %s [pid %d] to read %zu bytes\n",
 	    current->comm, current->pid, count);
 
 	if (copy_to_user(buf, zbuf, count)) {
@@ -105,7 +108,7 @@ static ssize_t czero_read(struct file *filp, char __user *buf,
 static ssize_t czero_write(struct file *filp, const char __user *buf,
 			   size_t count, loff_t *offp)
 {
-	MSG("process %s [pid %d], count=%ld\n",
+	MSG("process %s [pid %d], count=%zu\n",
 	    current->comm, current->pid, count);
 	return -ENOSYS;
 }
@@ -117,7 +120,7 @@ static ssize_t czero_write(struct file *filp, const char __user *buf,
 static ssize_t cnul_read(struct file *filp, char __user * buf,
 			 size_t count, loff_t * offp)
 {
-	MSG("process %s [pid %d], count=%ld\n",
+	MSG("process %s [pid %d], count=%zu\n",
 	    current->comm, current->pid, count);
 
 	/* as Linux does it, return 0 */
@@ -134,7 +137,7 @@ static ssize_t cnul_read(struct file *filp, char __user * buf,
 static ssize_t cnul_write(struct file *filp, const char __user * buf,
 			  size_t count, loff_t * offp)
 {
-	MSG("process %s [pid %d], count=%ld\n\tjiffies=%lu\n",
+	MSG("process %s [pid %d], count=%zu\n\tjiffies=%lu\n",
 	    current->comm, current->pid, count, jiffies);
 	return count;
 	/* a write() to the nul device should always succeed! */

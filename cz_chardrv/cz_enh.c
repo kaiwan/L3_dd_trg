@@ -69,16 +69,21 @@ static ssize_t czero_read(struct file *filp, char __user *buf,
 			  size_t count, loff_t *offp)
 {
 	char *zbuf;
-	u64 buf_to = 0;
+	unsigned long buf_to = 0;
 	int mcount = count, i = 0, loopcount, rem = 0, status = count;
 
-	MSG("process %s [pid %d] to read %ld bytes; buf=0x%lx\n",
+	/* TIP: for portability between 32 and 64-bit, for size_t use %zu, for
+	 * ssize_t use %zd
+	 */
+	MSG("process %s [pid %d] to read %zu bytes; buf=0x%lx\n",
 	    current->comm, current->pid, count, (unsigned long)buf);
 
 	if (count > PAGE_SIZE)
 		mcount = PAGE_SIZE;
 
-	/* kzalloc() not supported on RHEL4's kernel ver; >2.6.14 ?
+	/* This is really too old to bother with any longer...
+	 * But just pedantically:
+	 * kzalloc() not supported on RHEL4's kernel ver; >2.6.14 ?
 	 * API ref: http://gnugeneration.com/books/linux/2.6.20/kernel-api/re241.html
 	 */
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 14)
@@ -111,7 +116,7 @@ static ssize_t czero_read(struct file *filp, char __user *buf,
 
 	for (i = 0; i < loopcount; i++) {
 		buf_to = (unsigned long)buf + (i * PAGE_SIZE);
-		MSG("%d: buf_to loc=0x%llx\n", i, buf_to);
+		MSG("%d: buf_to loc=0x%lx\n", i, buf_to);
 		if (copy_to_user((void *)buf_to, zbuf, mcount)) {
 			status = -EFAULT;
 			goto out;
@@ -135,7 +140,7 @@ static ssize_t czero_read(struct file *filp, char __user *buf,
 		goto out;
 
 	buf_to = (unsigned long)buf + (i * PAGE_SIZE);
-	MSG("%d: buf_to loc=0x%llx\n", i, buf_to);
+	MSG("%d: buf_to loc=0x%lx\n", i, buf_to);
 	if (copy_to_user((void *)buf_to, zbuf, rem)) {
 		status = -EFAULT;
 		goto out;
@@ -149,7 +154,7 @@ static ssize_t czero_read(struct file *filp, char __user *buf,
 static ssize_t czero_write(struct file *filp, const char __user *buf,
 			   size_t count, loff_t *offp)
 {
-	MSG("process %s [pid %d], count=%ld\n",
+	MSG("process %s [pid %d], count=%zu\n",
 	    current->comm, current->pid, count);
 	return -ENOSYS;
 }
@@ -161,7 +166,7 @@ static ssize_t czero_write(struct file *filp, const char __user *buf,
 static ssize_t cnul_read(struct file *filp, char __user *buf,
 			 size_t count, loff_t *offp)
 {
-	MSG("process %s [pid %d], count=%ld\n",
+	MSG("process %s [pid %d], count=%zu\n",
 	    current->comm, current->pid, count);
 
 	/* as Linux does it, return 0 */
@@ -178,7 +183,7 @@ static ssize_t cnul_read(struct file *filp, char __user *buf,
 static ssize_t cnul_write(struct file *filp, const char __user *buf,
 			  size_t count, loff_t *offp)
 {
-	MSG("process %s [pid %d], count=%ld\n\tjiffies=%lu\n",
+	MSG("process %s [pid %d], count=%zu\n\tjiffies=%lu\n",
 	    current->comm, current->pid, count, jiffies);
 	return count;
 	/* a write() to the nul device should always succeed! */

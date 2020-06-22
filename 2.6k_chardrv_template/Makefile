@@ -23,7 +23,9 @@ else ifeq ($(ARCH),powerpc)
   # *UPDATE* 'KDIR' below to point to the PPC64 Linux kernel source tree on your box
   KDIR ?= ~/kernel/linux-4.9.1
 else
-  # x86[_64]: 'KDIR' is the Linux kernel source tree (headers) on your box
+  # 'KDIR' is the Linux 'kernel headers' package on your host system; this is
+  # usually an x86_64, but could be anything, really (f.e. building directly
+  # on a Raspberry Pi implies that it's the host)
   KDIR ?= /lib/modules/$(shell uname -r)/build
 endif
 
@@ -39,7 +41,9 @@ install:
 	@echo
 	@echo "-- installing --"
 	@echo
-	make -C $(KDIR) M=$(PWD) modules_install
+# seems to work when we use M=$(shell pwd)
+	make -C $(KDIR) M=$(shell pwd) modules_install
+	#make -C $(KDIR) M=$(PWD) modules_install
 clean:
 	@echo
 	@echo "-- cleaning --"

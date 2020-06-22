@@ -39,7 +39,7 @@ install:
 	@echo
 	@echo "-- installing --"
 	@echo
-	make -C $(KDIR) M=$(PWD) modules_install
+	make -C $(KDIR) M=$(shell pwd) modules_install
 clean:
 	@echo
 	@echo "-- cleaning --"

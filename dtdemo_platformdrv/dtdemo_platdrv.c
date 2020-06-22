@@ -52,8 +52,12 @@ int dtdemo_platdev_remove(struct platform_device *pdev)
 }
 
 static const struct of_device_id my_of_ids[] = {
-	/* This is esp important: MUST EXACTLY match the 'compatible' property
-	   in the DT; even a mismatched space will cause the match to fail! */
+	/*
+	 * DT compatible property syntax: <manufacturer,model> ...
+	 * This is especially important: it MUST EXACTLY match the 'compatible'
+	 * property in the DT; *even a mismatched space will cause the match to
+	 * fail* !
+	 */
 	{ .compatible = "dtdemo,dtdemo_platdev"},
 	{},
 };

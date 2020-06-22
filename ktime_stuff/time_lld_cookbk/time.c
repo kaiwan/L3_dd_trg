@@ -41,7 +41,17 @@ static int __init time_init(void)
 	/* ssleep() is a wrapper over msleep():  = msleep(ms*1000); */
     print_time("10,000,000,000 ns via          ssleep(10)", ssleep(10));
 
+	/* --- ALSO see our implementation of sleep(n) as
+	 * convenient.h:DELAY_SEC(n)
+	 * -it uses the schedule_timeout() API
+	 */
+
     return -EINVAL;
+    /* We deliberately abort here as there's nothing more to do, really...
+     * so pl ignore the:
+     * 'insmod: ERROR: could not insert module ./time.ko: Invalid parameters'
+     * message on stdout
+     */
 }
 
 static void __exit time_exit(void)

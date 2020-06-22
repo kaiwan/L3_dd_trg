@@ -27,8 +27,8 @@ else
   KDIR ?= /lib/modules/$(shell uname -r)/build
 endif
 
-#obj-m          += cz.o
-obj-m          += cz_enh.o
+obj-m          += cz.o
+#obj-m          += cz_enh.o
 EXTRA_CFLAGS   += -DDEBUG
 
 all:

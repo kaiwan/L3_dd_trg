@@ -1,17 +1,15 @@
 /*
  * ktimers/ktimers.c
  ***************************************************************
- * < Your desc, comments, etc >
- * (c) Author:
- ****************************************************************
- * Brief Description:
- *
+ * Simple demo of a kernel timer
+ * (c) Author: Kaiwan NB
+ * License: MIT/GPL
  */
 #include <linux/init.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/timer.h>
-#include "../convenient.h"
+#include "../../convenient.h"
 
 #define OURMODNAME   "ktimers"
 
@@ -34,15 +32,16 @@ static void ding(struct timer_list *timr)
 	pr_info("%s:%s()! timed out... data=%d\n",
 		OURMODNAME, __func__, mykd->data--);
 
-	/* fire it again! */
-	mod_timer(&mykd->tmr, jiffies + msecs_to_jiffies(exp_ms));
+	/* until countdown done, fire it again! */
+	if (mykd->data)
+		mod_timer(&mykd->tmr, jiffies + msecs_to_jiffies(exp_ms));
 }
 
 static int __init ktimers_init(void)
 {
 	int stat = 0;
 
-	pr_debug("%s: inserted\n", OURMODNAME);
+	pr_info("%s: inserted\n", OURMODNAME);
 	kd.data = 114;
 	timer_setup(&kd.tmr, ding, 0);
 
@@ -60,7 +59,7 @@ static void __exit ktimers_exit(void)
 {
 	pr_info("%s: wait for possible timeouts to complete...\n", OURMODNAME);
 	del_timer_sync(&kd.tmr);
-	pr_debug("%s: removed\n", OURMODNAME);
+	pr_info("%s: removed\n", OURMODNAME);
 }
 
 module_init(ktimers_init);

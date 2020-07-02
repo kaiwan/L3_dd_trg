@@ -13,7 +13,7 @@
  * as an exercise to the participant!); this is done in the slpy_proper.c driver.
  *
  * Author: Kaiwan N Billimoria <kaiwan@kaiwantech.com>
- * [L]GPL
+ * Dual MIT/GPL
  */
 #include <linux/init.h>
 #include <linux/kernel.h>
@@ -23,6 +23,7 @@
 #include <linux/interrupt.h>
 #include <linux/sched.h>	/* current, jiffies */
 #include <linux/workqueue.h>
+#include <linux/timer.h>
 #include "../convenient.h"
 
 #define	DRVNAME		"workq_splydrv"
@@ -51,13 +52,15 @@ static void whee(struct timer_list *tmr)
 //	QPDS;
 
 #if 0
-	schedule();
+	schedule();   // BUG! trigger an Oops!
 #endif
 	/* Reset and activate the timer */
 	mod_timer(&timr, jiffies + delaysec*HZ);
 }
 
-/* This is our deferred processing work queue handler. */
+/* This is our deferred processing work queue handler; it
+ * runs in process context (via a kernel thread)
+ */
 static void wq_func(struct work_struct *work) //void *data)
 {
 	MSG("We're here doing some deferred work! HZ=%d jiffies=%lu\n", HZ, jiffies);
@@ -69,27 +72,27 @@ static void wq_func(struct work_struct *work) //void *data)
 	mod_timer(&timr, jiffies + delaysec*HZ);
 }
 
-
 static ssize_t sleepy_read(struct file *filp, char __user *buf, 
 			size_t count, loff_t *offp)
 {
 	MSG("process %d (%s) going to sleep\n", current->pid, current->comm);
 
+	// put our process context into an interruptible sleep...
 	if (wait_event_interruptible(wq, atomic_read(&data_present)==1)) {
 		MSG("wait interrupted by signal, ret -ERESTARTSYS to VFS..\n");
 		return -ERESTARTSYS;
 	}
 
-	MSG("awoken %d (%s), data_present=%d\n", 
-	current->pid, current->comm, atomic_read(&data_present));
+	pr_info("%s: awoken %d (%s), data_present=%d\n",
+		DRVNAME, current->pid, current->comm, atomic_read(&data_present));
 
 	return 0; /* EOF */
 }
 
-static ssize_t sleepy_write(struct file *filp, const char __user *buf, 
+static ssize_t sleepy_write(struct file *filp, const char __user *buf,
 			size_t count, loff_t *offp)
 {
-	MSG("Scheduling deferred work in the work queue now...\n");
+	pr_info("%s: scheduling deferred work in the work queue now...\n", DRVNAME);
 	schedule_work(&ws);
 
 	MSG("process %d (%s) awakening the readers...\n",
@@ -122,11 +125,15 @@ static int __init workq_slpydrv_init_module(void)
 		sleepy_major = result;
 	pr_debug("sleepy: major # = %d\n", sleepy_major);
 
+	// INIT_WORK(_work, _func)
 	INIT_WORK(&ws, wq_func);
-	timer_setup(&timr, whee, 0);
-	pr_info("%s: workQ and timer initialized..\n", DRVNAME);
 
+	// timer_setup(timer, callback, flags)
+	timer_setup(&timr, whee, 0);
+
+	pr_info("%s: workQ and timer initialized..\n", DRVNAME);
 	MSG("Loaded ok.\n");
+
 	return 0; /* success */
 }
 

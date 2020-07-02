@@ -23,7 +23,7 @@
 
 #include <linux/miscdevice.h>
 #include <linux/delay.h>
-#include <linux/of.h>
+#include <linux/of.h>   // of_* APIs (Open Firmware!)
 
 #define DRVNAME "dtdemo_platdrv"
 
@@ -34,12 +34,19 @@ int dtdemo_platdev_probe(struct platform_device *pdev)
 	int len = 0;
 
 	dev_dbg(dev, "platform driver probe enter\n");
-	prop = of_get_property(pdev->dev.of_node, "aproperty", &len);
-	if (!prop) {
-		pr_warn("%s: getting DT property failed\n", DRVNAME);
-		return -1;
+	if (pdev->dev.of_node) {
+		prop = of_get_property(pdev->dev.of_node, "aproperty", &len);
+		if (!prop) {
+			pr_warn("%s: getting DT property failed\n", DRVNAME);
+			return -1;
+		}
+		pr_info("%s: DT property 'aproperty' = %s (len=%d)\n", DRVNAME, prop, len);
 	}
-	pr_info("%s: DT property 'aproperty' = %s (len=%d)\n", DRVNAME, prop, len);
+	else {
+		pr_warn("couldn't access DT property!\n");
+		return -EINVAL;
+	}
+
 	return 0;
 }
 
@@ -51,6 +58,7 @@ int dtdemo_platdev_remove(struct platform_device *pdev)
 	return 0;
 }
 
+#ifdef CONFIG_OF
 static const struct of_device_id my_of_ids[] = {
 	/*
 	 * DT compatible property syntax: <manufacturer,model> ...
@@ -61,8 +69,8 @@ static const struct of_device_id my_of_ids[] = {
 	{ .compatible = "dtdemo,dtdemo_platdev"},
 	{},
 };
-
 MODULE_DEVICE_TABLE(of, my_of_ids);
+#endif
 
 static struct platform_driver my_platform_driver = {
 	.probe = dtdemo_platdev_probe,
@@ -71,7 +79,9 @@ static struct platform_driver my_platform_driver = {
 		.name = "dtdemo_platdev", /* platform drv driver name must
 	       EXACTLY match the DT 'compatible' property for binding to occur;
 	       then, this module is loaded up and it's probe method invoked! */
+#ifdef CONFIG_OF
 		.of_match_table = my_of_ids,
+#endif
 		.owner = THIS_MODULE,
 	}
 };

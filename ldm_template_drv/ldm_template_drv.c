@@ -61,7 +61,7 @@ static int <chipname>_probe(struct <foo>_client/dev *client/dev, // named as 'cl
  * The <foo>_device_id structure:
  * where <foo> is one of:
  *  acpi_button, cnic, cpufreq, gameport, hid, i2c, ide_pci, ipmi, mbus, mmc,
- *  pnp, scsi, sdio, serio, tty, usb, vme
+ *  pnp, scsi, sdio, serio, spi, tty, usb, vme
  */
 static const struct <foo>_device_id <chipname>_id[] = { 
     { "<chipname>", 0 },		/* matching by name; required for platform and i2c
@@ -94,11 +94,11 @@ MODULE_DEVICE_TABLE(acpi, <chipname>_acpi_id);
 
 
 
-/* 
+/*
  * The <foo>_driver structure:
  * where <foo> is one of:
  *  acpi_button, cnic, cpufreq, gameport, hid, i2c, ide_pci, ipmi, mbus, mmc,
- *  pnp, scsi, sdio, serio, tty, usb, vme
+ *  pci, pnp, scsi, sdio, serio, spi, tty, usb, vme
  */
 static struct <foo>_driver <chipname>_driver = {
 	.driver     = {
@@ -128,7 +128,7 @@ static struct <foo>_driver <chipname>_driver = {
  *
  * where <foo> is one of:
  *  acpi_button, cnic, cpufreq, gameport, hid, i2c, ide_pci, ipmi, mbus, mmc,
- *  pnp, scsi, sdio, serio, tty, usb, vme
+ *  pci, pnp, scsi, sdio, serio, spi, tty, usb, vme
  * There are several foo_register_driver() APIs; see a list (for 5.4.0) here:
  *  https://gist.github.com/kaiwan/04cfaca711aed9e59282601fafd8aa24
  */

@@ -2,12 +2,27 @@
  * ldm_template_drv.c
  *
  * This 'template' does NOT propose to be complete in any manner whatsoever.
- * Use at your own discretion... it's "in the hope it might be useful" of
- * course...
+ * Use at your own discretion... it's written in the "hope it might be useful"
+ * spirit of course...
  *
  * (c) 2020 Kaiwan N Billimoria, kaiwanTECH
  * Dual MIT/GPL
  */
+#include <linux/init.h>
+#include <linux/module.h>
+#include <linux/kernel.h>
+#include <linux/sched.h>
+#include <linux/slab.h>
+#include <linux/version.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,11,0)
+#include <linux/uaccess.h>
+#include <linux/sched/signal.h>
+#else
+#include <asm/uaccess.h>
+#endif
+#include <linux/device.h>
+//#include <linux/i2c.h>
+
 MODULE_AUTHOR("<your name, email id>");
 MODULE_DESCRIPTION("<driver 1 line decription>");
 MODULE_LICENSE("<license>");
@@ -32,9 +47,9 @@ static int <chipname>_probe(struct <foo>_client/dev *client/dev, // named as 'cl
 	/*
 	 * first param: struct <foo>_client *client
 	 * the specialized structure for this kernel framework (eg. i2c, spi, usb,
-	 * pci, etc); we often/usually extract the 'device' pointer from it..
+	 * pci, platform, etc); we often/usually extract the 'device' pointer from it..
 	 */
-	struct device *dev = client->dev;
+	struct device *dev = &client->dev;
 
 	/*
 	 * Your work in the probe() routine:
@@ -61,7 +76,7 @@ static int <chipname>_probe(struct <foo>_client/dev *client/dev, // named as 'cl
  * The <foo>_device_id structure:
  * where <foo> is one of:
  *  acpi_button, cnic, cpufreq, gameport, hid, i2c, ide_pci, ipmi, mbus, mmc,
- *  pnp, scsi, sdio, serio, spi, tty, usb, vme
+ *  pnp, platform, scsi, sdio, serio, spi, tty, usb, usb_serial, vme
  */
 static const struct <foo>_device_id <chipname>_id[] = { 
     { "<chipname>", 0 },		/* matching by name; required for platform and i2c
@@ -76,8 +91,15 @@ MODULE_DEVICE_TABLE(<foo>, <chipname>_id);
  */
 #ifdef CONFIG_OF
 static const struct of_device_id <chipname>_of_match[] = {
-						/* ARM/PPC/etc: matching by DT 'compatible' property */
-    { .compatible = "<manufacturer>,<model>" },
+	/* 
+	 * ARM/PPC/etc: matching by DT 'compatible' property
+	 * 'compatible' property: one or more strings that define the specific
+	 * programming model for the device. This list of strings should be used
+	 * by a client program for device driver selection. The property value
+	 * consists of a concatenated list of null terminated strings,
+	 * from most specific to most general. 
+	 */
+    { .compatible = "<manufacturer>,<model-abc-xyz>", "<oem>,<model-abc>", /*<...>*/ },
  // f.e.:   { .compatible = "nxp,pcf8563" },
     {}
 };
@@ -98,12 +120,12 @@ MODULE_DEVICE_TABLE(acpi, <chipname>_acpi_id);
  * The <foo>_driver structure:
  * where <foo> is one of:
  *  acpi_button, cnic, cpufreq, gameport, hid, i2c, ide_pci, ipmi, mbus, mmc,
- *  pci, pnp, scsi, sdio, serio, spi, tty, usb, vme
+ *  pci, platform, pnp, scsi, sdio, serio, spi, tty, usb, usb_serial, vme
  */
 static struct <foo>_driver <chipname>_driver = {
 	.driver     = {
 		.name   = "<driver-name-used-for-match>",  /* platform and I2C use the
-					'name' field for the match and thius the bind between the
+					'name' field for the match and thus the bind between the
 					DT desc/device and driver */
 		.of_match_table = of_match_ptr(<chipname>_of_match),
 	},
@@ -128,8 +150,8 @@ static struct <foo>_driver <chipname>_driver = {
  *
  * where <foo> is one of:
  *  acpi_button, cnic, cpufreq, gameport, hid, i2c, ide_pci, ipmi, mbus, mmc,
- *  pci, pnp, scsi, sdio, serio, spi, tty, usb, vme
+ *  pci, platform, pnp, scsi, sdio, serio, spi, tty, usb, usb_serial, vme
  * There are several foo_register_driver() APIs; see a list (for 5.4.0) here:
  *  https://gist.github.com/kaiwan/04cfaca711aed9e59282601fafd8aa24
  */
-module_<foo>_driver(&<chipname>_driver);
+module_<foo>_driver(<chipname>_driver);

@@ -46,10 +46,10 @@ static struct platform_device plat0 = {
 	.dev = {
 		.platform_data = NULL, /* (the old deprecated way):
 		     Plug in the device's resources here: memory ranges/IRQs/
-		      IOports/DMA channels/clocks/etc + optionally 'data'
-		      (typically a private structure).
-                     The new way is of course to use the Device Tree (DTS file)
-		     to specify both the 'data' and platform-specific resources
+		     IOports/DMA channels/clocks/etc + optionally 'data'
+		     (typically a private structure).
+             The new way - on pltaforms that support it - is of course
+		     to use the Device Tree (ARM/PPC) / ACPI tables (x86)
 		     */
 		.release = plat0_release,
 	},

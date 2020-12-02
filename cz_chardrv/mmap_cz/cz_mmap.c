@@ -84,8 +84,7 @@ static int czero_mmap(struct file *filp, struct vm_area_struct *vma)
 	int len=vma->vm_end - vma->vm_start, status=0;
 QP;
 
-	if (zbuf)
-		kfree (zbuf);
+	kfree (zbuf);
 	zbuf=NULL;
 	
 	MSG("vma: start=0x%08x end=0x%08x len=%d pgoff=%lu\n", 

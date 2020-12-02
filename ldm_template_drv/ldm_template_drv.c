@@ -4,6 +4,8 @@
  * This 'template' does NOT propose to be complete in any manner whatsoever.
  * Use at your own discretion... it's written in the "hope it might be useful"
  * spirit of course...
+ * ALSO, it's just pseudo-code; we expect you'll make a copy and edit it,
+ * correcting and adding stuff as you go along...
  *
  * (c) 2020 Kaiwan N Billimoria, kaiwanTECH
  * Dual MIT/GPL

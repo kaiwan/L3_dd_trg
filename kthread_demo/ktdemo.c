@@ -31,7 +31,12 @@ static int mykt(void *arg)
 	allow_signal(SIGINT);
 	allow_signal(SIGQUIT);
 
-	while (1) {
+	while (!kthread_should_stop()) {
+		/* the kthread_should_stop() checks if this kthread should stop -
+		 * returning True if that's the case... the kthread_stop() in the
+		 * cleanup code does exactly this: it has the kthread_should_stop()
+		 * return True, thus terminating this loop!
+		 */
 		pr_info("K Thread %d going to sleep now...\n", current->pid);
 		set_current_state (TASK_INTERRUPTIBLE);
 		schedule();	// and yield the processor...
@@ -43,9 +48,8 @@ static int mykt(void *arg)
 
 	// We've been interrupted by a signal...
 	set_current_state (TASK_RUNNING);
-	pr_info("K thread %d exiting now...\n", current->pid);
-	do_exit(0);
-	BUG(); // do_exit() should never return
+	pr_info("Kernel thread %d exiting now...\n", current->pid);
+
 	return 0;
 }
 
@@ -76,8 +80,7 @@ static int ktdemo_init(void)
 
 static void ktdemo_exit(void)
 {
-	if(gKthrd) 
-		kthread_stop(gKthrd);
+	kthread_stop(gKthrd);
 	put_task_struct(gKthrd); // dec refcnt, "release" the task struct
 	pr_info("Module %s unloaded.\n", MODULE_NAME);
 }

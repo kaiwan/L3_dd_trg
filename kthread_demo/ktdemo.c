@@ -46,7 +46,7 @@ static int mykt(void *arg)
 			break;
 	}
 
-	// We've been interrupted by a signal...
+	// We've been interrupted by a signal or stopped...time to die!
 	set_current_state (TASK_RUNNING);
 	pr_info("Kernel thread %d exiting now...\n", current->pid);
 

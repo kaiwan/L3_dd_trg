@@ -5,7 +5,9 @@
  * Procedure:
  * a) specify the 'work func' via the init_irq_work() interface
  * b) "run it" by queuing up the work via the irq_work_queue() api.
- * (Seems to use the IPI - inter-processor-interrupts - to raise an IRQ).
+ * (Seems to use the IPI - inter-processor-interrupts - to raise an IRQ on
+ * itself, i.e., the IRQ is always raised on the processor core that called
+ * irq_work_queue(); IOW, it sends an IPI to itself! Eg. on the x86: arch/x86/kernel/irq_work.c:arch_irq_work_raise()).
  * Ref: https://lwn.net/Articles/411605/
  */
 #include <linux/init.h>

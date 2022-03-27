@@ -466,14 +466,14 @@ static int ds3231_remove(struct i2c_client *client)
 /*
  * 1. By name : for platform & I2C devices
  * The <foo>_device_id structure:
- * where <foo> is one of:
+ * where <foo> is typically one of:
  *  acpi_button, cnic, cpufreq, gameport, hid, i2c, ide_pci, ipmi, mbus, mmc,
  *  pnp, scsi, sdio, serio, spi, tty, usb, vme
  */
 static const struct i2c_device_id ds3231_id[] = {
 	{"ks3231", 0},	/* matching by name; required for platform and i2c
-						 * devices & drivers
-						 */
+					 * devices & drivers
+					 */
 	{}
 };
 MODULE_DEVICE_TABLE(i2c, ds3231_id);
@@ -487,7 +487,7 @@ static const struct of_device_id ds3231_of_match[] = {
 	 * compatible poperty  "<manufacturer>,<model>", to our own names as we do NOT
 	 * want the default DS compatible driver modprobe'd by default at startup
 	 */
-	{.compatible = "knb,ks3231"},
+	{.compatible = "myvendor,ks3231"},
   //{ .compatible = "maxim,ds3231" },
   //{ .compatible = "<manufacturer>,<model>" },
 	{ }
@@ -511,7 +511,7 @@ static const struct of_device_id dev_ids = {
 
 /*
  * The <foo>_driver structure:
- * where <foo> is one of:
+ * where <foo> is typically one of:
  *  acpi_button, cnic, cpufreq, gameport, hid, i2c, ide_pci, ipmi, mbus, mmc,
  *  pci, pnp, scsi, sdio, serio, spi, tty, usb, vme
  */
@@ -544,7 +544,7 @@ static struct i2c_driver ds3231_driver = {
  *
  * module_foo_driver() macro;
  *
- * where <foo> is one of:
+ * where <foo> is typically one of:
  *  acpi_button, cnic, cpufreq, gameport, hid, i2c, ide_pci, ipmi, mbus, mmc,
  *  pci, pnp, scsi, sdio, serio, spi, tty, usb, vme
  * There are several foo_register_driver() APIs; see a list (for 5.4.0) here:

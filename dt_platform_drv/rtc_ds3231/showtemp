@@ -1,0 +1,25 @@
+#!/bin/bash
+DRVNAME=ds3231
+I2CNAME=ks3231
+#I2CNAME=ds3231
+SYSFS_FILE=/sys/module/${DRVNAME}/drivers/i2c\:${I2CNAME}/1-0068/ds3231_temp
+TMSEC=65
+
+lsmod |grep -q ${DRVNAME} || {
+  echo "$0: driver ${DRVNAME} not loaded?"
+  #exit 1
+}
+[ ! -r ${SYSFS_FILE} ] && {
+  echo "$0: driver sysfs file ${SYSFS_FILE} not present/readable?"
+  exit 1
+}
+
+echo "Will display the temperature (millidegrees C, from the DS3231 RTC) every ${TMSEC}s...
+(sysfs file: ${SYSFS_FILE}
+only updated once every 64s)"
+while [ true ] ; do
+	printf "`date +%c`:"	
+	cat ${SYSFS_FILE}
+	echo
+	sleep ${TMSEC}
+done

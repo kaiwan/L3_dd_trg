@@ -76,7 +76,7 @@ static int <chipname>_probe(struct <foo>_client/dev *client/dev, // named as 'cl
 /* 
  * 1. By name : for platform & I2C devices
  * The <foo>_device_id structure:
- * where <foo> is one of:
+ * where <foo> is typically one of:
  *  acpi_button, cnic, cpufreq, gameport, hid, i2c, ide_pci, ipmi, mbus, mmc,
  *  pnp, platform, scsi, sdio, serio, spi, tty, usb, usb_serial, vme
  */
@@ -120,7 +120,7 @@ MODULE_DEVICE_TABLE(acpi, <chipname>_acpi_id);
 
 /*
  * The <foo>_driver structure:
- * where <foo> is one of:
+ * where <foo> is typically one of:
  *  acpi_button, cnic, cpufreq, gameport, hid, i2c, ide_pci, ipmi, mbus, mmc,
  *  pci, platform, pnp, scsi, sdio, serio, spi, tty, usb, usb_serial, vme
  */
@@ -150,7 +150,7 @@ static struct <foo>_driver <chipname>_driver = {
  *
  * module_foo_driver() macro;
  *
- * where <foo> is one of:
+ * where <foo> is typically one of:
  *  acpi_button, cnic, cpufreq, gameport, hid, i2c, ide_pci, ipmi, mbus, mmc,
  *  pci, platform, pnp, scsi, sdio, serio, spi, tty, usb, usb_serial, vme
  * There are several foo_register_driver() APIs; see a list (for 5.4.0) here:

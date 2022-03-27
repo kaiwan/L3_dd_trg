@@ -1,10 +1,13 @@
 /*
  * ds3231.c
- * based on my ldm_template_drv.c
+ * Home-brewed DS3231 RTC driver.
+ * Based on my ldm_template_drv.c
  *
  * Reports the temperature via a sysfs file
  * DS3231 datasheet:
  *  https://components101.com/sites/default/files/component_datasheet/DS3231%20Datasheet.pdf
+ *
+ * TODO/FIXME: Issues with writing I2C registers
  *
  * (c) 2020 Kaiwan N Billimoria, kaiwanTECH
  * License: Dual MIT/GPL
@@ -177,9 +180,7 @@ static int ds3231_rtc_read_time(struct device *dev, struct rtc_time *tm)
 	tm->tm_mon = bcd2bin(buf[5] & 0xF);
 	tm->tm_year = bcd2bin(buf[6] & 0xF); // & 0x7F;
 
-	//ds3231_read_temp(dev);
-
-	return 0; //TIME_BASEREG_LEN;
+	return 0;
 }
 
 static int ds3231_rtc_set_time(struct device *dev, struct rtc_time *t)
@@ -238,19 +239,6 @@ static const struct rtc_class_ops ds3231_rtc_ops = {
 #endif
 };
 
-#if 0
-static char *fetch_of_prop(struct device *dev, const char *propname)
-{
-	char *prop = NULL;
-	int len = 0;
-
-	if (dev->of_node)
-		prop = of_get_property(dev->of_node, propname, &len);
-	return prop;
-}
-#endif
-
-//static irqreturn_t ds3231_thread_handler(int irq, void *data)
 static irqreturn_t ds3231_handler(int irq, void *data)
 {
 QP;
@@ -281,18 +269,9 @@ static int ds3231_probe(struct i2c_client *client, const struct i2c_device_id *i
 	struct device *dev = &client->dev;
 	struct ds3231 *ds3231;
 	int err = 0, irq;
-	//struct gpio_desc *gpio;
-	//char *res;
 
 	QP;
 
-#if 0
-	res = fetch_of_prop(dev, "interrupts");
-	if (res)
-		pr_info("DT property 'interrupts' = %s\n", res);
-	else
-		pr_info("DT prop 'interrupts' fetch failed\n");
-#endif
 	/*
 	 * Your work in the probe() routine:
 	 * 1. Initialize the device
@@ -324,33 +303,11 @@ static int ds3231_probe(struct i2c_client *client, const struct i2c_device_id *i
 
 	/* Setup the IRQ handler */
 	dev_dbg(dev, "client irq = %d\n", client->irq);
-#if 0
-	dev_dbg(dev, "IRQ: trying via GPIO\n");
-    gpio = devm_gpiod_get_optional(dev, "ds3231-sqw",
-                           GPIOD_OUT_HIGH);
-    if (IS_ERR(gpio))
-		dev_dbg(dev, "devm_gpiod_get_optional() failed\n");
-    else
-		client->irq = gpiod_to_irq(gpio);
-#endif
 
 #if 1
-/* Via DT; doesn't work.. ?
-		 ds3231@68 {
-                compatible = "knb,ks3231";
-                status = "okay";
-                phandle = < 0x80 >;
-                reg = < 0x68 >;
-                interrupts = < 0x2 170 >;
-            };
-
-//#define IRQ_LINE    170
- */
-
 /* TODO :: use gpiolib; gpio_request ?, gpio_direction_output(), ...
  also see: drivers/input/keyboard/matrix_keypad.c:matrix_keypad_parse_dt()
  */
-
 	/* We've attached the DS3231's SQW output to the R Pi's GPIO pin #16 */
 	irq = gpio_to_irq(GPIO_SQW);
 		// this emits a WARN_ONCE() ! what can be done?
@@ -433,11 +390,8 @@ static int ds3231_probe(struct i2c_client *client, const struct i2c_device_id *i
 	dev_dbg(&client->dev, "ctrlreg = 0x%08x\n", ctrlreg);
 	//print_hex_dump_bytes("ctrl reg bf", DUMP_PREFIX_OFFSET, ctrlreg_buf, 1);
 
-	//if (
-	
 	ctrlreg |= 0x5;
 	write_i2c_register(client, CONTROL_REG, ctrlreg);
-	//mb();
 	ctrlreg_buf[0] = '\0';
 	ds3231_read_block_data(client, CONTROL_REG, 1, ctrlreg_buf);
 	ctrlreg = kstrtou8(ctrlreg_buf, 0, &ctrlreg);
@@ -524,8 +478,7 @@ static struct i2c_driver ds3231_driver = {
 			 * DT desc/device and driver
 			 */
 		.of_match_table = of_match_ptr(ds3231_of_match),
-				//.of_match_table = of_match_ptr(dev_ids),
-	  },
+	 },
      .probe = ds3231_probe,	// invoked on driver/device bind
      .remove = ds3231_remove,	// optional; invoked on driver/device detach
      .id_table = ds3231_id,

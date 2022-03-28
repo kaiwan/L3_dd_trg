@@ -21,6 +21,8 @@
  * EXTRA_CFLAGS += -DDEBUG
  * (under the "obj-m" line) if you want the flag defined.
  */
+#define pr_fmt(fmt) "%s:%s():%d: " fmt, KBUILD_MODNAME, __func__, __LINE__
+
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/init.h>
@@ -36,17 +38,8 @@
 #include <asm/uaccess.h>
 #endif
 
-#define	DRVNAME		"cz"
 #define CZ_MAJOR	0	/* 0 => dynamic major number assignment */
 #define MAX_READ_COUNT	PAGE_SIZE
-
-#ifdef DEBUG
-#define MSG(string, args...) \
-		printk(KERN_DEBUG "%s:%s:%d: " string, \
-			DRVNAME, __func__, __LINE__, ##args)
-#else
-#define MSG(string, args...)
-#endif
 
 static int cz_major = CZ_MAJOR;
 
@@ -70,26 +63,16 @@ static ssize_t czero_read(struct file *filp, char __user *buf,
 	if (count > MAX_READ_COUNT)
 		count = MAX_READ_COUNT;
 
-	/* kzalloc() not supported on RHEL4 2.6.14 kernel */
-#if 0
-	// though it's commented out, lets fix it...
 	zbuf = kzalloc(count, GFP_KERNEL);
-	if (zbuf == NULL) {
+	if (unlikely(zbuf == NULL)) {
 		status = -ENOMEM;
 		goto out_no_mem;
 	}
-#endif
-	zbuf = kmalloc(count, GFP_KERNEL);
-	if (zbuf == NULL) {
-		status = -ENOMEM;
-		goto out_no_mem;
-	}
-	memset(zbuf, 0, count);
 
 	/* TIP: for portability between 32 and 64-bit, for size_t use %zu, for
 	 * ssize_t use %zd
 	 */
-	MSG("process %s [pid %d] to read %zu bytes\n",
+	pr_debug("process %s [pid %d] to read %zu bytes\n",
 	    current->comm, current->pid, count);
 
 	if (copy_to_user(buf, zbuf, count)) {
@@ -108,19 +91,20 @@ static ssize_t czero_read(struct file *filp, char __user *buf,
 static ssize_t czero_write(struct file *filp, const char __user *buf,
 			   size_t count, loff_t *offp)
 {
-	MSG("process %s [pid %d], count=%zu\n",
+	pr_debug("process %s [pid %d], count=%zu\n",
 	    current->comm, current->pid, count);
-	return -ENOSYS;
+	return -ENOSYS; // 'Function not implemented'
 }
 
 /* ----------The cnul_* functionality routines
  *
- * cnul is designed to be a sink
+ * cnul is designed to be a sink; but let's make it useful by ret 0,
+ * allowing a file to be truncated!
  */
 static ssize_t cnul_read(struct file *filp, char __user * buf,
 			 size_t count, loff_t * offp)
 {
-	MSG("process %s [pid %d], count=%zu\n",
+	pr_debug("process %s [pid %d], count=%zu\n",
 	    current->comm, current->pid, count);
 
 	/* as Linux does it, return 0 */
@@ -134,16 +118,24 @@ static ssize_t cnul_read(struct file *filp, char __user * buf,
 	 */
 }
 
+/* 
+The signature of the driver 'method' is IDENTICAL to the file_operations member..
+ssize_t (*write) (struct file *, const char __user *, size_t, loff_t *); 
+*/
 static ssize_t cnul_write(struct file *filp, const char __user * buf,
 			  size_t count, loff_t * offp)
 {
-	MSG("process %s [pid %d], count=%zu\n\tjiffies=%lu\n",
+	pr_debug("process %s [pid %d], count=%zu\n\tjiffies=%lu\n",
 	    current->comm, current->pid, count, jiffies);
 	return count;
 	/* a write() to the nul device should always succeed! */
 }
 
-/* Minor-specific open routines */
+/* Minor-specific routines
+ * For both the null and zero devices, set the llseek to no_llseek() which always
+ * returns failure; as seeks aren't supported but not defining it can result in a
+ * false positive
+ */
 static const struct file_operations czero_fops = {
 	.llseek = no_llseek,
 	.read = czero_read,
@@ -158,7 +150,7 @@ static const struct file_operations cnul_fops = {
 
 static int cz_open(struct inode *inode, struct file *filp)
 {
-	MSG("Device node with minor # %d being used\n", iminor(inode));
+	pr_debug("Device node with minor # %d being used\n", iminor(inode));
 
 	switch (iminor(inode)) {
 	case 1:
@@ -179,7 +171,9 @@ static int cz_open(struct inode *inode, struct file *filp)
 	return 0;
 }
 
-/* Major-wide open routine */
+/* Major-wide open routine
+ * This guarantees that *all* minor devices when opened, will run this open routine as well!
+ */
 static const struct file_operations czopen_fops = {
 	.open = cz_open,	/* just a means to get at the real open */
 };
@@ -195,30 +189,30 @@ static int __init cz_init_module(void)
 {
 	int result;
 
-	MSG("cz_major=%d\n", cz_major);
+	pr_debug("cz_major=%d\n", cz_major);
 
 	/*
 	 * Register the major, and accept a dynamic number.
 	 * The return value is the actual major # assigned.
 	 */
-	result = register_chrdev(cz_major, DRVNAME, &czopen_fops);
+	result = register_chrdev(cz_major, KBUILD_MODNAME, &czopen_fops);
 	if (result < 0) {
-		MSG("register_chrdev() failed trying to get cz_major=%d\n",
+		pr_info("register_chrdev() failed trying to get cz_major=%d\n",
 		    cz_major);
 		return result;
 	}
 
 	if (cz_major == 0)
 		cz_major = result;	/* dynamic */
-	MSG("registered:: cz_major=%d\n", cz_major);
+	pr_info("registered:: cz_major=%d\n", cz_major);
 
 	return 0;		/* success */
 }
 
 static void __exit cz_cleanup_module(void)
 {
-	unregister_chrdev(cz_major, DRVNAME);
-	MSG("Unregistered.\n");
+	unregister_chrdev(cz_major, KBUILD_MODNAME);
+	pr_info("Unregistered.\n");
 }
 
 module_init(cz_init_module);

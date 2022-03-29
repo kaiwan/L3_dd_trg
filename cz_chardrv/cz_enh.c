@@ -34,14 +34,6 @@
 #define CZ_MAJOR	0	/* 0 => dynamic major number assignment */
 //#define MAX_READ_COUNT        PAGE_SIZE
 
-#ifdef DEBUG
-#define MSG(string, args...) \
-		printk(KERN_DEBUG "%s:%s:%d: " string, \
-			DRVNAME, __func__, __LINE__, ##args)
-#else
-#define MSG(string, args...)
-#endif
-
 static int cz_major = CZ_MAJOR;
 
 /* ----------The czero_* functionality routines
@@ -75,7 +67,7 @@ static ssize_t czero_read(struct file *filp, char __user *buf,
 	/* TIP: for portability between 32 and 64-bit, for size_t use %zu, for
 	 * ssize_t use %zd
 	 */
-	MSG("process %s [pid %d] to read %zu bytes; buf=0x%lx\n",
+	pr_debug("process %s [pid %d] to read %zu bytes; buf=0x%lx\n",
 	    current->comm, current->pid, count, (unsigned long)buf);
 
 	if (count > PAGE_SIZE)
@@ -112,11 +104,11 @@ static ssize_t czero_read(struct file *filp, char __user *buf,
 #endif
 	/* Loop abs(count/PAGE_SIZE) times */
 	loopcount = count / PAGE_SIZE;
-	MSG("loopcount=%d\n", loopcount);
+	pr_debug("loopcount=%d\n", loopcount);
 
 	for (i = 0; i < loopcount; i++) {
 		buf_to = (unsigned long)buf + (i * PAGE_SIZE);
-		MSG("%d: buf_to loc=0x%lx\n", i, buf_to);
+		pr_debug("%d: buf_to loc=0x%lx\n", i, buf_to);
 		if (copy_to_user((void *)buf_to, zbuf, mcount)) {
 			status = -EFAULT;
 			goto out;
@@ -127,20 +119,19 @@ static ssize_t czero_read(struct file *filp, char __user *buf,
 		if ((!(i % 100))
 		    &&
 		    unlikely(test_tsk_thread_flag(current, TIF_NEED_RESCHED)))
-			cond_resched();
-		//schedule();
+				schedule();
 #endif
 #endif
 	}
 
 	/* Remaining bytes to fill */
 	rem = count % PAGE_SIZE;
-	MSG("rem=%d\n", rem);
+	pr_debug("rem=%d\n", rem);
 	if (!rem)
 		goto out;
 
 	buf_to = (unsigned long)buf + (i * PAGE_SIZE);
-	MSG("%d: buf_to loc=0x%lx\n", i, buf_to);
+	pr_debug("%d: buf_to loc=0x%lx\n", i, buf_to);
 	if (copy_to_user((void *)buf_to, zbuf, rem)) {
 		status = -EFAULT;
 		goto out;
@@ -154,7 +145,7 @@ static ssize_t czero_read(struct file *filp, char __user *buf,
 static ssize_t czero_write(struct file *filp, const char __user *buf,
 			   size_t count, loff_t *offp)
 {
-	MSG("process %s [pid %d], count=%zu\n",
+	pr_debug("process %s [pid %d], count=%zu\n",
 	    current->comm, current->pid, count);
 	return -ENOSYS;
 }
@@ -166,7 +157,7 @@ static ssize_t czero_write(struct file *filp, const char __user *buf,
 static ssize_t cnul_read(struct file *filp, char __user *buf,
 			 size_t count, loff_t *offp)
 {
-	MSG("process %s [pid %d], count=%zu\n",
+	pr_debug("process %s [pid %d], count=%zu\n",
 	    current->comm, current->pid, count);
 
 	/* as Linux does it, return 0 */
@@ -183,7 +174,7 @@ static ssize_t cnul_read(struct file *filp, char __user *buf,
 static ssize_t cnul_write(struct file *filp, const char __user *buf,
 			  size_t count, loff_t *offp)
 {
-	MSG("process %s [pid %d], count=%zu\n\tjiffies=%lu\n",
+	pr_debug("process %s [pid %d], count=%zu\n\tjiffies=%lu\n",
 	    current->comm, current->pid, count, jiffies);
 	return count;
 	/* a write() to the nul device should always succeed! */
@@ -240,7 +231,7 @@ static int __init cz_init_module(void)
 {
 	int result;
 
-	MSG("cz_major=%d\n", cz_major);
+	pr_debug("cz_major=%d\n", cz_major);
 
 	/*
 	 * Register the major, and accept a dynamic number.

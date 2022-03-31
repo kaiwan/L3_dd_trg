@@ -4,7 +4,7 @@
 GPIO_PIN=16
 
 echo "[Un]exporting GPIO pin #${GPIO_PIN} now..."
-echo ${GPIO_PIN} > /sys/class/gpio/unexport
+echo ${GPIO_PIN} > /sys/class/gpio/unexport 2>/dev/null
 # First export the required GPIO pin to make it turn up
 echo ${GPIO_PIN} > /sys/class/gpio/export
 

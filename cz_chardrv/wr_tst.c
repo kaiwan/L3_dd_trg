@@ -41,7 +41,7 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
-	printf("sleepy:: wrote %d bytes\n", n);
+	printf("sleepy:: wrote %ld bytes\n", n);
 	close(fd);
 	exit(0);
 }

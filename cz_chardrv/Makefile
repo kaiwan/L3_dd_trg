@@ -28,7 +28,7 @@ else
 endif
 
 obj-m          += cz.o
-#obj-m          += cz_enh.o
+obj-m          += cz_enh.o
 EXTRA_CFLAGS   += -DDEBUG
 
 all:

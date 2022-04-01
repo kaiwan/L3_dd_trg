@@ -241,8 +241,10 @@ static const struct rtc_class_ops ds3231_rtc_ops = {
 
 static irqreturn_t ds3231_handler(int irq, void *data)
 {
-QP;
+	struct ds3231 *ds3231 = (struct ds3231 *)data;
+	struct device *dev = &ds3231->client->dev;
 
+	dev_dbg(dev, "***** in hardirq handler! *****\n");
 	return IRQ_HANDLED;
 }
 
@@ -313,12 +315,21 @@ static int ds3231_probe(struct i2c_client *client, const struct i2c_device_id *i
 		// this emits a WARN_ONCE() ! what can be done?
 	dev_dbg(dev, "irq = %d\n", irq);
 
-	err = devm_request_threaded_irq(dev, irq, NULL, ds3231_handler,
-	//err = devm_request_irq(dev, irq, ds3231_handler,
-			IRQF_ONESHOT | IRQF_TRIGGER_FALLING,
-			//IRQF_SHARED | IRQF_TRIGGER_FALLING,
-			//IRQF_SHARED | IRQF_TRIGGER_RISING,
+	/*
+	 * When we use the threaded model and IRQ flags
+	 *  IRQF_ONESHOT | IRQF_TRIGGER_FALLING
+	 * we get a runtime err from the generic IRQ Linux kernel:
+	 * "genirq: Flags mismatch irq 160. 00000081 (gpiolib) vs. 00002002 (ds3231)"
+	 * The required value (by genirq) of 0x81 is the bitwise OR of IRQF_SHARED (0x80)
+	 * and IRQF_TRIGGER_RISING (0x01) ! Note that there's no IRQF_ONESHOT (which is
+	 * reqd for a threaded handler):
+	 *  ' genirq: Threaded irq requested with handler=NULL and !ONESHOT for ds3231 (irq 160)'
+	 * So, keep it as a traditional hardirq with devm_request_irq():
+	 */
+	//err = devm_request_threaded_irq(dev, irq, NULL, ds3231_handler,
 			//IRQF_ONESHOT | IRQF_TRIGGER_FALLING,
+	err = devm_request_irq(dev, irq, ds3231_handler,
+			IRQF_SHARED | IRQF_TRIGGER_RISING, // 0x81 !
 			KBUILD_MODNAME, ds3231);
 	if (err)
 		dev_warn(dev, "threaded IRQ request failed (%d)\n", err);

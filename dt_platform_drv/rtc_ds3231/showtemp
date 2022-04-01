@@ -16,7 +16,7 @@ lsmod |grep -q ${DRVNAME} || {
 
 echo "Will display the temperature (millidegrees C, from the DS3231 RTC) every ${TMSEC}s...
 (sysfs file: ${SYSFS_FILE}
-only updated once every 64s)"
+only updated once every $((TMSEC-1))s)"
 while [ true ] ; do
 	printf "`date +%c`:"	
 	cat ${SYSFS_FILE}

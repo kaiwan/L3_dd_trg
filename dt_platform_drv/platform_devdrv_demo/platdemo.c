@@ -20,7 +20,7 @@
 #include <linux/slab.h>
 #include <linux/device.h>
 #include <linux/platform_device.h>
-#include "../convenient.h"
+#include "../../convenient.h"
 
 #define DRVNAME  "platdemo"
 /*------------------------ Structs, prototypes, .. ------------------*/

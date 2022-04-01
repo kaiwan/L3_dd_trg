@@ -47,6 +47,16 @@ int dtdemo_platdev_probe(struct platform_device *pdev)
 		return -EINVAL;
 	}
 
+	/* Initialize the device, mapping I/O memory, registering the interrupt handlers. The
+     * bus infrastructure provides methods to get the addresses, interrupt numbers and
+     * other device-specific information
+	 */
+	 // ...
+
+	// Registering the device to the proper kernel framework
+	// eg. i2c_register_driver(...);
+	// ...
+
 	return 0;
 }
 
@@ -62,6 +72,7 @@ int dtdemo_platdev_remove(struct platform_device *pdev)
 static const struct of_device_id my_of_ids[] = {
 	/*
 	 * DT compatible property syntax: <manufacturer,model> ...
+	 * Can have multiple pairs of <oem,model>, from most specific to most general.
 	 * This is especially important: it MUST EXACTLY match the 'compatible'
 	 * property in the DT; *even a mismatched space will cause the match to
 	 * fail* !
@@ -92,6 +103,7 @@ static int dtdemo_platdrv_init(void)
 	pr_info("%s: inserted\n", DRVNAME);
 
 	trace_printk("@@@@@ %s: MARKER 1: platform_driver_register() begin\n", DRVNAME);
+	// Register ourself to a bus
 	ret_val = platform_driver_register(&my_platform_driver);
 	trace_printk("@@@@@ %s: MARKER 2: platform_driver_register() done\n", DRVNAME);
 	if (ret_val !=0) {

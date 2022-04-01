@@ -1,52 +1,6 @@
 /*
- * user_kernel_comm/sysfs_simple_intf/sysfs_simple_intf.c
- ***************************************************************
- * This program is based upon the source code released for the book
- *  "Learn Linux Kernel Development"
- *  (c) Author: Kaiwan N Billimoria
- *  Publisher:  Packt
- *  GitHub repository:
- *  https://github.com/PacktPublishing/Learn-Linux-Kernel-Development
- *
- * From: Ch - User-Kernel communication pathways
- ****************************************************************
- * Brief Description:
- *
- * [[ Added stuff from the superb ELDD, Venkateswaran book ! ]]
- *
- * Simple kernel module to demo interfacing with userspace via sysfs.
- * Sysfs is one of several available user<->kernel interfaces; the others
- * include sysfs, debugfs, netlink sockets and the ioctl.
- * In order to demonstrate (and let you easily contrast) between these
- * user<->kernel interfaces, in all cases we create three (or four) 'files' or
- * 'objects' (by issuing the appropriate kernel APIs).
- * In this particular case, the interface is via sysfs, we create three
- * sysfs pseudo-files under a directory whose name is the name given to this
- * kernel module. These three sysfs 'files', what they are named and meant for
- * is summarized below:
- * /sys
- *  ...
- *  |---sysfs_simple_intf            <-- our sysfs directory
- *      |---llkdsysfs_debug_level
- *      |---llkdsysfs_pgoff
- *      |---llkdsysfs_pressure
- *
- * Summary of our sysfs files and how they can be used (R=>read,W=>write)
- * (1) llkdsysfs_debug_level   : RW
- *      R: read retrieves (to userspace) the current value of the global var
- *         debug_level
- *      W: write a value (from userspace) to the global var debug_level, thus
- *         changing the debug level verbosity
- *      file perms: 0644
- * (2) llkdsysfs_pgoff       : R-
- *      R: read retrieves (to userspace) the value of PAGE_OFFSET
- *      file perms: 0444
- * (3) llkdsysfs_pressure    : R-
- *      R: read retrieves (to userspace) the value of the (dummy) global
- *         variable gpressure
- *      file perms: 0440
- *
- * For details, please refer the book.
+ * L3_dd_trg/input_drv_mouse
+ * Mostly from the exellent ELDD book...
  */
 #define pr_fmt(fmt) "%s:%s(): " fmt, KBUILD_MODNAME, __func__
 

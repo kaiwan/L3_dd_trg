@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define DEVFILE "/sys/devices/platform/vms/vms"
+#define SYSFS_FILE "/sys/devices/platform/vms/vms"
 
 int main(int argc, char *argv[])
 {
@@ -17,7 +17,7 @@ int main(int argc, char *argv[])
 	char buffer[10];
 
 /* Open the sysfs coordinate node */
-	sim_fd = open(DEVFILE, O_WRONLY);
+	sim_fd = open(SYSFS_FILE, O_WRONLY);
 	if (sim_fd < 0) {
 		perror("Couldn't open vms coordinate file\n");
 		exit(-1);

@@ -1,0 +1,36 @@
+To try this out:
+
+1. Build & insmod
+make
+sudo insmod ./input_drv_mouse.ko
+
+Registers a new input device! -a virtual 2d mouse-like one..
+
+2. Check the kernel log, check the new input device file /dev/input/inputX
+   (tip: doing ls -lt /dev/input/ will show the latest one on top)
+
+3. In one terminal window:
+   build and execute the userspace prg coord_gen.c ; it will generate random (x,y)
+   coordinate values and write them to our (input_drv_mouse.ko's) platform device's
+   sysfs file here:
+   $ ls -l /sys/devices/platform/vms/vms 
+   --w------- 1 root root 4.0K Apr  1 08:42 /sys/devices/platform/vms/vms
+
+   $ sudo ./coord_gen
+
+4. In another terminal window:
+   Run the evtest program:
+
+   $ sudo evtest /dev/input/inputX
+
+   It will display the coordinates it receives via the kernel input layer!
+
+...
+Event: time 1648783180.208398, type 2 (EV_REL), code 0 (REL_X), value -13
+Event: time 1648783180.208398, type 2 (EV_REL), code 1 (REL_Y), value -15
+Event: time 1648783180.208398, -------------- SYN_REPORT ------------
+Event: time 1648783181.217991, type 2 (EV_REL), code 0 (REL_X), value 6
+Event: time 1648783181.217991, type 2 (EV_REL), code 1 (REL_Y), value 12
+Event: time 1648783181.217991, -------------- SYN_REPORT ------------
+...
+

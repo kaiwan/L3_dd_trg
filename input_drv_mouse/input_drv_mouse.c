@@ -113,18 +113,17 @@ static ssize_t vms_store(struct device *dev,
 	input_sync(vms_input_dev);
 
 	/*
-	"The first statement generates a REL_X event or a relative device movement in the X direction. The second
-produces a REL_Y event or a relative movement in the Y direction. input_sync() indicates that this event is
-complete, so the input subsystem collects these two events into a single evdev packet and sends it out of the
-door through /dev/input/eventX, where X is the interface number assigned to the vms driver. An application
-reading this file will receive event packets in the input_event format described earlier.
+	"- The first statement generates a REL_X event or a relative device movement in the X direction.
+	 - The second produces a REL_Y event or a relative movement in the Y direction. 
+	 - input_sync() indicates that this event is complete, so the input subsystem collects these
+	  two events into a single evdev packet and sends it out of the door through /dev/input/eventX, 
+	  where X is the interface number assigned to the vms driver. 
+
+	  An application reading this file will receive event packets in the input_event format described earlier.
 
 Run the coords_gen user mode app in one window.. 
 
-To request gpm (general purpose mouse) to attach to this event interface and accordingly chase the cursor around your screen, do this:
-bash> gpm -m /dev/input/eventX -t evdev
-
-	Alt, can use the evtest app to 'see' events as they occur: f.e.:
+	Can use the evtest app to 'see' events as they occur: f.e.:
 $ sudo evtest /dev/input/event7
 Input driver version is 1.0.1
 Input device ID: bus 0x0 vendor 0x0 product 0x0 version 0x0
@@ -147,6 +146,10 @@ Event: time 1610437932.745446, type 2 (EV_REL), code 1 (REL_Y), value -15
 Event: time 1610437932.745446, -------------- SYN_REPORT ------------
 [ ... ]
 ^C$
+
+Alternately, to request gpm (general purpose mouse) to attach to this event interface
+and accordingly chase the cursor around your screen, do this:
+ sudo gpm -m /dev/input/eventX -t evdev
 */
 
 	return count;

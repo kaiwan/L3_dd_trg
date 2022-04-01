@@ -1,6 +1,6 @@
 /*
  * L3_dd_trg/input_drv_mouse
- * Mostly from the exellent ELDD book...
+ * Mostly from the excellent ELDD book...
  */
 #define pr_fmt(fmt) "%s:%s(): " fmt, KBUILD_MODNAME, __func__
 
@@ -174,7 +174,7 @@ static int __init input_drv_mouse_init(void)
 	     * The &dev_attr_SYSFS_FILE1 above (2nd param to the
 	     * device_create_file() API), is actually *instantiated* via this
 	     * declaration above:
-	     *  static DEVICE_ATTR_RW(SYSFS_FILE1);
+	     *  static DEVICE_ATTR_WO(SYSFS_FILE1);
 	     * This DEVICE_ATTR{_RW|RO|WO}() macro instantiates a
 	     *  struct device_attribute dev_attr_<name>    data structure!
 	     * ... and hence we automatically get the rd/wr callbacks registered.

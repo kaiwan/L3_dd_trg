@@ -6,7 +6,7 @@
 #  - several static analysis targets (via sparse, gcc, flawfinder, cppcheck)
 #  - two 'dummy' dynamic analysis targets (KASAN, LOCKDEP)
 #  - a packaging (.tar.xz) target and
-#  - a help target.
+#  - a help target
 # (c) 2020 Kaiwan N Billimoria, kaiwanTECH
 
 # To support cross-compiling for kernel modules:

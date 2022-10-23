@@ -5,6 +5,7 @@
  * Slightly modified, Kaiwan NB.
  */
 #define pr_fmt(fmt) "%s:%s(): " fmt, KBUILD_MODNAME, __func__
+#include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/fs.h>
 #include <linux/miscdevice.h>
@@ -86,7 +87,8 @@ static int __init miscdrv_init(void)
 	dev = my_miscdevice.this_device;
 	dev_dbg(dev, "dev ptr = 0x%pK [actual=0x%lx]; device node: /dev/%s\n",
 			dev, (unsigned long)dev, DEVNODENM);
-	return 0;
+
+	return 0;	/* success */
 }
 
 static void __exit miscdrv_exit(void)

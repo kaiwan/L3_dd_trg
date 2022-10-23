@@ -6,7 +6,7 @@
  * be retrieved and displayed in the platform driver!
  * Tested by modifying the DT of the Raspberry Pi 3B+.
  *
- * Kaiwan NB, kaiwanTECH
+ * Kaiwan N Billimoria, kaiwanTECH
  * Dual MIT/GPL
  */
 #include <linux/module.h>

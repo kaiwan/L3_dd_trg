@@ -153,7 +153,8 @@ MODULE_AUTHOR("Your Name here");
 MODULE_DESCRIPTION("Write a one-line description of the char device driver here.");
 
 #if 1
-MODULE_LICENSE("GPL");	/* necessary for the device API */
+//MODULE_LICENSE("Proprietary");
+MODULE_LICENSE("Dual MIT/GPL");	/* necessary for the device API */
 #endif
 /*
  If not released under license "GPL", we get these errors upon insmod:

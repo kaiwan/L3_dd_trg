@@ -172,7 +172,8 @@ static int cz_open(struct inode *inode, struct file *filp)
 }
 
 /* Major-wide open routine
- * This guarantees that *all* minor devices when opened, will run this open routine as well!
+ * This guarantees that *any and all* minor devices belonging to this major
+ * are opened, the kernel will run this open routine as well!
  */
 static const struct file_operations czopen_fops = {
 	.open = cz_open,	/* just a means to get at the real open */

@@ -34,6 +34,15 @@ int dtdemo_platdev_probe(struct platform_device *pdev)
 	int len = 0;
 
 	dev_dbg(dev, "platform driver probe enter\n");
+	/* The DT node within the board DT is:
+	 * ...
+	 *  dtdemo_chip {
+     *         compatible = "dtdemo,dtdemo_platdev";
+     *         aproperty = "my prop 1";
+     *  };
+	 *
+	 *  So, let's retrieve a property of the node by name, 'aproperty'
+	 */
 	if (pdev->dev.of_node) {
 		prop = of_get_property(pdev->dev.of_node, "aproperty", &len);
 		if (!prop) {
@@ -53,7 +62,7 @@ int dtdemo_platdev_probe(struct platform_device *pdev)
 	 */
 	 // ...
 
-	// Registering the device to the proper kernel framework
+	// Register the device to the proper kernel framework
 	// eg. i2c_register_driver(...);
 	// ...
 
@@ -87,8 +96,9 @@ static struct platform_driver my_platform_driver = {
 	.probe = dtdemo_platdev_probe,
 	.remove = dtdemo_platdev_remove,
 	.driver = {
-		.name = "dtdemo_platdev", /* platform drv driver name must
-	       EXACTLY match the DT 'compatible' property for binding to occur;
+		.name = "dtdemo_platdev", /* platform driver name must
+	       EXACTLY match the DT 'compatible' property - described in the DT
+		   for the board - for binding to occur;
 	       then, this module is loaded up and it's probe method invoked! */
 #ifdef CONFIG_OF
 		.of_match_table = my_of_ids,
@@ -100,12 +110,11 @@ static struct platform_driver my_platform_driver = {
 static int dtdemo_platdrv_init(void)
 {
 	int ret_val;
+
 	pr_info("%s: inserted\n", DRVNAME);
 
-	trace_printk("@@@@@ %s: MARKER 1: platform_driver_register() begin\n", DRVNAME);
 	// Register ourself to a bus
 	ret_val = platform_driver_register(&my_platform_driver);
-	trace_printk("@@@@@ %s: MARKER 2: platform_driver_register() done\n", DRVNAME);
 	if (ret_val !=0) {
 		pr_err("platform value returned %d\n", ret_val);
 		return ret_val;

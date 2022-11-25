@@ -10,6 +10,9 @@
  * (c) 2020 Kaiwan N Billimoria, kaiwanTECH
  * Dual MIT/GPL
  */
+#define pr_fmt(fmt) "%s:%s(): " fmt, KBUILD_MODNAME, __func__
+#define dev_fmt(fmt) "%s(): " fmt, __func__
+
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/kernel.h>

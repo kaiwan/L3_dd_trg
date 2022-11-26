@@ -19,7 +19,7 @@
 #include <linux/sched.h>
 #include <linux/slab.h>
 #include <linux/version.h>
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,11,0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
 #include <linux/uaccess.h>
 #include <linux/sched/signal.h>
 #else
@@ -47,7 +47,7 @@ MODULE_LICENSE("<license>");
 
 /* The probe method of our driver */
 static int <chipname>_probe(struct <foo>_client/dev *client/dev, // named as 'client' or 'dev'
-                const struct <foo>_device_id *id)
+			const struct <foo>_device_id *id)
 {
 	/*
 	 * first param: struct <foo>_client *client
@@ -69,25 +69,25 @@ static int <chipname>_probe(struct <foo>_client/dev *client/dev, // named as 'cl
 
 
 /*------- Matching the driver to the device ------------------
- * 3 different ways: 
+ * 3 different ways:
  *  by name : for platform & I2C devices
  *  by DT 'compatible' property : for devices on the Device Tree
  *                                 (ARM32, Aarch64, PPC, etc)
  *  by ACPI ID : for devices on ACPI tables (x86)
  */
 
-/* 
+/*
  * 1. By name : for platform & I2C devices
  * The <foo>_device_id structure:
  * where <foo> is typically one of:
  *  acpi_button, cnic, cpufreq, gameport, hid, i2c, ide_pci, ipmi, mbus, mmc,
  *  pnp, platform, scsi, sdio, serio, spi, tty, usb, usb_serial, vme
  */
-static const struct <foo>_device_id <chipname>_id[] = { 
-    { "<chipname>", 0 },		/* matching by name; required for platform and i2c
-									devices & drivers */
-    // f.e.: { "pcf8563", 0 },
-    { } 
+static const struct <foo>_device_id <chipname>_id[] = {
+	{ "<chipname>", 0 },		/* matching by name; required for platform and i2c
+								 * devices & drivers */
+	// f.e.: { "pcf8563", 0 },
+	{ }
 };
 MODULE_DEVICE_TABLE(<foo>, <chipname>_id);
 
@@ -96,17 +96,17 @@ MODULE_DEVICE_TABLE(<foo>, <chipname>_id);
  */
 #ifdef CONFIG_OF
 static const struct of_device_id <chipname>_of_match[] = {
-	/* 
+	/*
 	 * ARM/PPC/etc: matching by DT 'compatible' property
 	 * 'compatible' property: one or more strings that define the specific
 	 * programming model for the device. This list of strings should be used
 	 * by a client program for device driver selection. The property value
 	 * consists of a concatenated list of null terminated strings,
-	 * from most specific to most general. 
+	 * from most specific to most general.
 	 */
-    { .compatible = "<manufacturer>,<model-abc-xyz>", "<oem>,<model-abc>", /*<...>*/ },
- // f.e.:   { .compatible = "nxp,pcf8563" },
-    {}
+	{ .compatible = "<manufacturer>,<model-abc-xyz>", "<oem>,<model-abc>", /*<...>*/ },
+	// f.e.:   { .compatible = "nxp,pcf8563" },
+	{ }
 };
 MODULE_DEVICE_TABLE(of, <chipname>_of_match);
 #endif
@@ -129,9 +129,11 @@ MODULE_DEVICE_TABLE(acpi, <chipname>_acpi_id);
  */
 static struct <foo>_driver <chipname>_driver = {
 	.driver     = {
-		.name   = "<driver-name-used-for-match>",  /* platform and I2C use the
-					'name' field for the match and thus the bind between the
-					DT desc/device and driver */
+		.name   = "<driver-name-used-for-match>",
+					/* platform and I2C use the
+					 * 'name' field for the match and thus the bind between the
+					 * DT desc/device and driver
+					 */
 		.of_match_table = of_match_ptr(<chipname>_of_match),
 	},
 	.probe      = <chipname>_probe,		// invoked on driver/device bind
@@ -145,7 +147,7 @@ static struct <foo>_driver <chipname>_driver = {
 };
 
 
-/* 
+/*
  * Init and Cleanup ::
  * Instead of manually specifiying the init and cleanup handlers in the
  * 'usual' manner, a lot of boilerplate is avoided (when nothing special is

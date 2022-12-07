@@ -5,7 +5,7 @@
  * Slightly modified, Kaiwan NB.
  */
 #define pr_fmt(fmt) "%s:%s(): " fmt, KBUILD_MODNAME, __func__
-#define dev_fmt(fmt) "%s:%s(): " fmt, KBUILD_MODNAME, __func__
+
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/fs.h>
@@ -14,6 +14,8 @@
 MODULE_LICENSE("Dual MIT/GPL");
 
 static struct device *dev;
+
+//#define dev_fmt(fmt) "%s(): " fmt, __func__
 
 static int my_dev_open(struct inode *inode, struct file *file)
 {
@@ -95,8 +97,8 @@ static int __init miscdrv_init(void)
 static void __exit miscdrv_exit(void)
 {
 	/* Unregister the device with the kernel */
+	dev_dbg(dev, "misc char driver unloading\n");
 	misc_deregister(&my_miscdevice);
-	dev_dbg(dev, "misc char driver exit\n");
 }
 
 module_init(miscdrv_init);

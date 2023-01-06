@@ -35,7 +35,8 @@ static void my_irq_work(struct irq_work *irqwk)
 {
 	PRINT_CTX();
 	dump_stack();
-	printk_ratelimited(KERN_WARNING "\n%s: a ratelimited printk here!\n", OURMODNAME);
+	pr_warn_ratelimited("\n%s: a ratelimited printk here!\n", OURMODNAME);
+	//printk_ratelimited(KERN_WARNING "\n%s: a ratelimited printk here!\n", OURMODNAME);
 	trace_printk("... followed by a trace_printk() too!\n");
 
 	if (sleep_in_intrctx == 1) {

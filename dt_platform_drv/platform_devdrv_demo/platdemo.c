@@ -12,6 +12,9 @@
  * Kaiwan NB <kaiwan -at- kaiwantech -dot- com>
  * (c) kaiwanTECH
  */
+#define pr_fmt(fmt) "%s:%s(): " fmt, KBUILD_MODNAME, __func__
+#define dev_fmt(fmt) "%s:%s(): " fmt, KBUILD_MODNAME, __func__
+
 #include <linux/init.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
@@ -44,13 +47,14 @@ static struct platform_device plat0 = {
 #endif
 	.id = 0,
 	.dev = {
-		.platform_data = NULL, /* (the old deprecated way):
-		     Plug in the device's resources here: memory ranges/IRQs/
-		     IOports/DMA channels/clocks/etc + optionally 'data'
-		     (typically a private structure).
-             The new way - on platforms that support it - is of course
-		     to use the Device Tree (ARM/PPC) / ACPI tables (x86)
-		     */
+		.platform_data = NULL,
+		/* (the old deprecated way):
+		 *   Plug in the device's resources here: memory ranges/IRQs/
+		 *   IOports/DMA channels/clocks/etc + optionally 'data'
+		 *   (typically a private structure).
+         *   The new way - on platforms that support it - is of course
+		 *   to use the Device Tree (ARM/PPC) / ACPI tables (x86)
+		 */
 		.release = plat0_release,
 	},
 };
@@ -75,7 +79,7 @@ typedef struct MyCtx {
 	int txpktnum, rxpktnum;
 	int tx_bytes, rx_bytes;
 	unsigned int data_xform;
-	spinlock_t lock;
+	//spinlock_t lock;
 } stMyCtx, *pstMyCtx;
 
 /*--------------------------------------------------------------------*/
@@ -90,23 +94,23 @@ static int platdev_probe(struct platform_device *pdev)
 	 */
 
 	pstCtx->data_xform = 100;
-	dev_dbg(dev, "platform driver: probe method invoked\n");
+	dev_dbg(dev, "probe method invoked; setting 'data_xform' to 100\n");
 	return 0;
 }
 
 static int platdev_remove(struct platform_device *pdev)
 {
-	pstMyCtx pstCtx = pdev->dev.platform_data;
 	struct device *dev = &pdev->dev;
+	pstMyCtx pstCtx = dev_get_platdata(dev);
 
-	dev_dbg(dev, "platform driver:remove method invoked\n data_xform=%d\n",
+	dev_dbg(dev, "remove method invoked\n data_xform=%d\n",
 	    pstCtx->data_xform);
 	return 0;
 }
 
 static void plat0_release(struct device *dev)
 {
-	dev_dbg(dev, "platform device: release method invoked\n");
+	dev_dbg(dev, "release method invoked\n");
 }
 
 static int __init platdev_init(void)
@@ -114,7 +118,7 @@ static int __init platdev_init(void)
 	int res = 0;
 	pstMyCtx pstCtx = NULL;
 
-	pr_info("%s: Initializing platform demo driver now...\n", DRVNAME);
+	pr_info("Initializing platform demo driver now...\n");
 
 	pstCtx = kzalloc(sizeof(stMyCtx), GFP_KERNEL);
 	if (!pstCtx)
@@ -125,13 +129,14 @@ static int __init platdev_init(void)
 	res = platform_add_devices(platdemo_platform_devices,
 				  ARRAY_SIZE(platdemo_platform_devices));
 	if (res) {
-		pr_alert("%s: platform_add_devices failed!\n", DRVNAME);
+		pr_warn("platform_add_devices failed!\n");
 		goto out_fail_pad;
 	}
 
+	// Register with the platform bus driver
 	res = platform_driver_register(&platdrv);
 	if (res) {
-		pr_alert("%s: platform_driver_register failed!\n", DRVNAME);
+		pr_warn("platform_driver_register failed!\n");
 		goto out_fail_pdr;
 	}
 	/* Successful platform_driver_register() will cause the registered 'probe'

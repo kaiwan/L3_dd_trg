@@ -47,11 +47,11 @@ MODULE_LICENSE("Dual MIT/GPL");
 /* This is the timeout function. */
 static void whee(struct timer_list *tmr)
 {
-	MSG("Timed out. jiffies=%lu\n", jiffies);
+	pr_debug("Timed out. jiffies=%lu\n", jiffies);
 	PRINT_CTX();
 //	QPDS;
 
-#if 0
+#if 1
 	schedule();   // BUG! trigger an Oops!
 #endif
 	/* Reset and activate the timer */
@@ -63,10 +63,10 @@ static void whee(struct timer_list *tmr)
  */
 static void wq_func(struct work_struct *work) //void *data)
 {
-	MSG("We're here doing some deferred work! HZ=%d jiffies=%lu\n", HZ, jiffies);
+	pr_debug("We're here doing some deferred work! HZ=%d jiffies=%lu\n", HZ, jiffies);
 	PRINT_CTX();
 	QPDS;
-	MSG("\nNow setting up a (auto-repeating) timer with %ds expiry...\n", delaysec);
+	pr_debug("\nNow setting up a (auto-repeating) timer with %ds expiry...\n", delaysec);
 
 	/* Activate the timer */
 	mod_timer(&timr, jiffies + delaysec*HZ);
@@ -75,11 +75,11 @@ static void wq_func(struct work_struct *work) //void *data)
 static ssize_t sleepy_read(struct file *filp, char __user *buf, 
 			size_t count, loff_t *offp)
 {
-	MSG("process %d (%s) going to sleep\n", current->pid, current->comm);
+	pr_debug("process %d (%s) going to sleep\n", current->pid, current->comm);
 
 	// put our process context into an interruptible sleep...
 	if (wait_event_interruptible(wq, atomic_read(&data_present)==1)) {
-		MSG("wait interrupted by signal, ret -ERESTARTSYS to VFS..\n");
+		pr_debug("wait interrupted by signal, ret -ERESTARTSYS to VFS..\n");
 		return -ERESTARTSYS;
 	}
 
@@ -95,7 +95,7 @@ static ssize_t sleepy_write(struct file *filp, const char __user *buf,
 	pr_info("%s: scheduling deferred work in the work queue now...\n", DRVNAME);
 	schedule_work(&ws);
 
-	MSG("process %d (%s) awakening the readers...\n",
+	pr_debug("process %d (%s) awakening the readers...\n",
 		current->pid, current->comm );
 
 	atomic_set(&data_present, 1);
@@ -132,7 +132,7 @@ static int __init workq_slpydrv_init_module(void)
 	timer_setup(&timr, whee, 0);
 
 	pr_info("%s: workQ and timer initialized..\n", DRVNAME);
-	MSG("Loaded ok.\n");
+	pr_debug("Loaded ok.\n");
 
 	return 0; /* success */
 }
@@ -142,7 +142,7 @@ static void __exit workq_slpydrv_cleanup_module(void)
 	del_timer_sync(&timr);
 	flush_scheduled_work();
 	unregister_chrdev(sleepy_major, DRVNAME);
-	MSG("Removed.\n");
+	pr_debug("Removed.\n");
 }
 
 module_init(workq_slpydrv_init_module);

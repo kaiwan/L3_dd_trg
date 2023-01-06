@@ -63,7 +63,7 @@ int dtdemo_platdev_probe(struct platform_device *pdev)
 	 // ...
 
 	// Register the device to the proper kernel framework
-	// eg. i2c_register_driver(...);
+	// eg. register_netdev(...);
 	// ...
 
 	return 0;

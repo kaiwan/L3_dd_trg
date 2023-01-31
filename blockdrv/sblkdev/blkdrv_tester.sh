@@ -19,7 +19,7 @@ eval "$@"
 
 name=$(basename $0)
 DISK=sblkdev1
-MOUNTPT=$(mount |grep ${DISK}|awk '{print $3}')
+MOUNTPT=$(mount |grep ${DISK}|awk '{print $3}' || true)
 if [ -z "${MOUNTPT}" ]; then
 	echo "${name}: disk ${DISK} not mounted?
 Tip: run the loadblk.sh script first..."

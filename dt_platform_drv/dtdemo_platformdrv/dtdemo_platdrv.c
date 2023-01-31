@@ -6,6 +6,20 @@
  * be retrieved and displayed in the platform driver!
  * Tested by modifying the DT of the Raspberry Pi 3B+.
  *
+ * Sample DT node in the dts for our fake platform device:
+ * (The node name doesn't matter; it's the compatible property that matches
+ *  with the same in this driver!):
+ *
+ * ...
+ * soc {
+ * ...
+ *        faker {
+ *                      compatible = "dtdemo,dtdemo_platdev";
+ *                      aproperty = "my new prop";
+ *                      reg = <0x1 0x2>;
+ *                      status = "okay";
+ *        };
+ * ...
  * Kaiwan N Billimoria, kaiwanTECH
  * Dual MIT/GPL
  */
@@ -34,15 +48,7 @@ int dtdemo_platdev_probe(struct platform_device *pdev)
 	int len = 0;
 
 	dev_dbg(dev, "platform driver probe enter\n");
-	/* The DT node within the board DT is:
-	 * ...
-	 *  dtdemo_chip {
-     *         compatible = "dtdemo,dtdemo_platdev";
-     *         aproperty = "my prop 1";
-     *  };
-	 *
-	 *  So, let's retrieve a property of the node by name, 'aproperty'
-	 */
+	/*  So, let's retrieve the property of the node by name, 'aproperty' */
 	if (pdev->dev.of_node) {
 		prop = of_get_property(pdev->dev.of_node, "aproperty", &len);
 		if (!prop) {

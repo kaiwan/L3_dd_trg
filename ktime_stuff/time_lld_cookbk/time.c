@@ -42,7 +42,7 @@ static int __init time_init(void)
     print_time("10,000,000,000 ns via          ssleep(10)", ssleep(10));
 
 	/* --- ALSO see our implementation of sleep(n) as
-	 * convenient.h:DELAY_SEC(n)
+	 * convenient.h:delay_sec(n)
 	 * -it uses the schedule_timeout() API
 	 */
 

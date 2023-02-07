@@ -2,10 +2,8 @@
  * cz_miscdrv.c
  *
  * Very simple demo char device driver for memory devices;
- * Uses char 'misc' framework, major # 10;
- * creates two misc devices, dynamic minor # allocation
- *
- * Implements two char 'misc' devices; minors are dynamically alloted:
+ * Uses char 'misc' framework, major # 10.
+ * This driver implements two char 'misc' devices; minors are dynamically alloted:
  * a) zero source        : /dev/czero_miscdev
  * b) sink (null device) : /dev/cnul_miscdev
  *
@@ -39,12 +37,11 @@
 #include <asm/uaccess.h>
 #endif
 
-#define MAX_READ_COUNT	PAGE_SIZE
-
 /* ----------The czero_* functionality routines
  *
  * czero is designed to be a zero source
  */
+#define MAX_READ_COUNT	PAGE_SIZE
 
 /*
  * czero_read:

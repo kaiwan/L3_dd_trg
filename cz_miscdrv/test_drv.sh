@@ -1,4 +1,5 @@
 #!/bin/bash
+name=$(basename $0)
 
 # runcmd
 # Parameters
@@ -10,9 +11,17 @@ echo "$@"
 eval "$@"
 }
 
-DRV=cz_miscdrv
-lsmod|grep ${DRV} || {
-	echo "First insmod the driver ${DRV} ..."
+[ $# -ne 1 ] && {
+	echo "Usage : ${name} pathname-to-driver-to-test.ko"
+	exit 1
+}
+
+DRV=$1
+sudo rmmod ${DRV::-3} 2>/dev/null
+runcmd "sudo insmod ${DRV}"
+lsmod|grep ${DRV::-3} || {
+	echo "insmod failed? aborting...
+(do you need to build it?)"
 	exit 1
 }
 
@@ -24,8 +33,11 @@ runcmd "dd if=/dev/czero_miscdev of=tst.dat bs=2k count=3 ; sudo dmesg -c"
 runcmd "ls -lh tst.dat"
 runcmd "hexdump tst.dat"
 echo
-echo "--- Test by reading >1 page; should get truncated to 1 page (at a time)..."
-runcmd "dd if=/dev/czero_miscdev of=tst.dat bs=6k count=3 ; sudo dmesg -c"
+echo "--- Test by reading >1 page:
+with cz_miscdrv     : should get truncated to 1 page (at a time)...
+with cz_enh_miscdrv : should transfer ALL requested bytes..."
+runcmd "dd if=/dev/czero_miscdev of=tst.dat bs=81k count=3 ; sudo dmesg -c"
+runcmd "hexdump tst.dat"
 
 echo
 echo "=== Test the cnul misc device:"

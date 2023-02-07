@@ -25,14 +25,6 @@
 
 #define	DRVNAME		"slpy"
 
-#ifdef DEBUG
-#define MSG(string, args...) \
-		printk(KERN_DEBUG "%s:%s:%d: " string, \
-			DRVNAME, __FUNCTION__, __LINE__, ##args)
-#else
-#define MSG(string, args...)
-#endif
-
 static atomic_t data_present = ATOMIC_INIT(0);	/* event condition flag */
 static int sleepy_major = 0;
 DECLARE_WAIT_QUEUE_HEAD(wq);
@@ -50,11 +42,11 @@ static ssize_t sleepy_read(struct file *filp, char __user * buf,
 			   size_t count, loff_t * offp)
 {
 	if (atomic_read(&data_present) == 0) {
-		MSG("process %d (%s) going to sleep\n", current->pid,
+		pr_debug("process %d (%s) going to sleep\n", current->pid,
 		    current->comm);
 		if (wait_event_interruptible
 		    (wq, (atomic_read(&data_present) == 1))) {
-			MSG("wait interrupted by signal, ret -ERESTARTSYS to VFS..\n");
+			pr_debug("wait interrupted by signal, ret -ERESTARTSYS to VFS..\n");
 			return -ERESTARTSYS;
 		}
 		/* 
@@ -62,10 +54,10 @@ static ssize_t sleepy_read(struct file *filp, char __user * buf,
 		 * this is actually effected by making the 
 		 * task state <- TASK_INTERRUPTIBLE and invoking the scheduler.
 		 */
-		MSG("awoken %d (%s), data_present=%d\n",
+		pr_debug("awoken %d (%s), data_present=%d\n",
 		    current->pid, current->comm, atomic_read(&data_present));
 	} else {
-		MSG("%d (%s): Data is available, proceeding...\n",
+		pr_debug("%d (%s): Data is available, proceeding...\n",
 		    current->pid, current->comm);
 		/* Actual read work done here (in a 'real' driver)... */
 	}
@@ -75,7 +67,7 @@ static ssize_t sleepy_read(struct file *filp, char __user * buf,
 static ssize_t sleepy_write(struct file *filp, const char __user * buf,
 			    size_t count, loff_t * offp)
 {
-	MSG("process %d (%s) awakening the readers...\n",
+	pr_debug("process %d (%s) awakening the readers...\n",
 	    current->pid, current->comm);
 
 	/* Set the wake-up event condition to True, simulating the 
@@ -112,7 +104,7 @@ static int __init slpy_init_module(void)
 static void __exit slpy_cleanup_module(void)
 {
 	unregister_chrdev(sleepy_major, DRVNAME);
-	MSG("Removed.\n");
+	pr_debug("Removed.\n");
 }
 
 module_init(slpy_init_module);

@@ -141,7 +141,7 @@ static int __init input_drv_mouse_init(void)
 		return -EINVAL;
 	}
 
-	// LDM: register with a bus; here we register w/ our platform device with the platform bus
+	// LDM: register with a bus; here we register our platform device with the platform bus
 
 	/* 0. Register a (dummy) platform device; required as we need a
 	 * struct device *dev pointer to create the sysfs file with
@@ -209,7 +209,11 @@ static int __init input_drv_mouse_init(void)
 #endif
 
 	// LDM: register with a kernel framework; here we register with the input subsystem
-	input_register_device(vms_input_dev);
+	stat = input_register_device(vms_input_dev);
+	if (stat) {
+		input_free_device(vms_input_dev);
+		goto out3;
+	}
 	pr_info("Virtual Mouse Driver Initialized.\n");
 
 	return 0;		/* success */

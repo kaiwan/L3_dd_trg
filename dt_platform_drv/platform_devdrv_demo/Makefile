@@ -14,7 +14,7 @@ else
 endif
 
 obj-m          += platdemo.o
-EXTRA_CFLAGS   += -DDEBUG
+ccflags-y   += -DDEBUG
 #$(info Building for: ARCH= CROSS_COMPILE= EXTRA_CFLAGS=)
 
 all:

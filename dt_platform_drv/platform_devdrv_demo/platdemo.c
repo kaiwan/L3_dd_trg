@@ -13,7 +13,6 @@
  * (c) kaiwanTECH
  */
 #define pr_fmt(fmt) "%s:%s(): " fmt, KBUILD_MODNAME, __func__
-#define dev_fmt(fmt) "%s:%s(): " fmt, KBUILD_MODNAME, __func__
 
 #include <linux/init.h>
 #include <linux/kernel.h>
@@ -94,7 +93,7 @@ static int platdev_probe(struct platform_device *pdev)
 	 */
 
 	pstCtx->data_xform = 100;
-	dev_dbg(dev, "probe method invoked; setting 'data_xform' to 100\n");
+	dev_dbg(dev, "probe method invoked; setting data_xform to 100\n");
 	return 0;
 }
 

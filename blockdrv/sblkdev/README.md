@@ -1,11 +1,13 @@
 # sblkdev
 Simple Block Device Linux kernel module
-url: https://github.com/CodeImp/sblkdev
-ref article: https://prog.world/linux-kernel-5-0-we-write-simple-block-device-under-blk-mq/
+url: https://github.com/CodeImp/sblkdev  \[1\]
+
+ref article: https://prog.world/linux-kernel-5-0-we-write-simple-block-device-under-blk-mq/   \[2\]
 
 Contains a minimum of code to create the most primitive block device.
 
-The Linux kernel is constantly evolving. And that's fine, but it complicates
+From \[1\]: 
+"The Linux kernel is constantly evolving. And that's fine, but it complicates
 the development of out-of-tree modules. I created this out-of-tree kernel
 module to make it easier for beginners (and myself) to study the block layer.
 
@@ -18,7 +20,7 @@ Features:
 How to use (run as root):
 * Install kernel headers and compiler
 deb:
-	`apt install linux-haders gcc make`
+	`apt install linux-headers gcc make`
 	or
 	`apt install dkms`
 rpm:

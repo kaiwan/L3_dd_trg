@@ -1,35 +1,37 @@
-/* 
+/*
  * dtdemo_platdrv.c
  *
  * A platform driver (for a pseudo non-existant platform device); just to
  * demonstrate that what OF properties have been put in the Device Tree can
  * be retrieved and displayed in the platform driver!
- * Tested by modifying the DT of the Raspberry Pi 3B+.
+ * Tested by modifying the DT of the Raspberry Pi 3B+ (or whichever).
  *
  * Sample DT node in the dts for our fake platform device:
- * (The node name doesn't matter; it's the compatible property that matches
+ * (The node name doesn't matter; it's the *compatible* property that matches
  *  with the same in this driver!):
  *
  * ...
  * soc {
  * ...
- *        faker {
- *                      compatible = "dtdemo,dtdemo_platdev";
- *                      aproperty = "my new prop";
- *                      reg = <0x1 0x2>;
- *                      status = "okay";
+ *        dtdemo_chip {
+ *                compatible = "dtdemo,dtdemo_platdev";
+ *                aproperty = "my new prop";
+ *                reg = <0x1 0x2>;
+ *                status = "okay";
  *        };
  * ...
  * Kaiwan N Billimoria, kaiwanTECH
- * Dual MIT/GPL
+ * License: Dual MIT/GPL
  */
+#define pr_fmt(fmt) "%s:%s(): " fmt, KBUILD_MODNAME, __func__
+
 #include <linux/module.h>
 #include <linux/fs.h>
 #include <linux/platform_device.h>
 
 //--- copy_[to|from]_user()
 #include <linux/version.h>
-#if LINUX_VERSION_CODE > KERNEL_VERSION(4,11,0)
+#if LINUX_VERSION_CODE > KERNEL_VERSION(4, 11, 0)
 #include <linux/uaccess.h>
 #else
 #include <asm/uaccess.h>
@@ -40,6 +42,11 @@
 #include <linux/of.h>   // of_* APIs (Open Firmware!)
 
 #define DRVNAME "dtdemo_platdrv"
+
+MODULE_LICENSE("Dual MIT/GPL");
+MODULE_AUTHOR("Kaiwan N Billimoria");
+MODULE_DESCRIPTION(
+"Demo: setting up a DT node, so that this platform drv can get bound");
 
 int dtdemo_platdev_probe(struct platform_device *pdev)
 {
@@ -52,19 +59,18 @@ int dtdemo_platdev_probe(struct platform_device *pdev)
 	if (pdev->dev.of_node) {
 		prop = of_get_property(pdev->dev.of_node, "aproperty", &len);
 		if (!prop) {
-			pr_warn("%s: getting DT property failed\n", DRVNAME);
+			dev_warn(dev, "getting DT property failed\n");
 			return -1;
 		}
-		pr_info("%s: DT property 'aproperty' = %s (len=%d)\n", DRVNAME, prop, len);
-	}
-	else {
-		pr_warn("couldn't access DT property!\n");
+		dev_info(dev, "DT property 'aproperty' = %s (len=%d)\n", prop, len);
+	} else {
+		dev_warn(dev, "couldn't access DT property!\n");
 		return -EINVAL;
 	}
 
 	/* Initialize the device, mapping I/O memory, registering the interrupt handlers. The
-     * bus infrastructure provides methods to get the addresses, interrupt numbers and
-     * other device-specific information
+	 * bus infrastructure provides methods to get the addresses, interrupt numbers and
+	 * other device-specific information
 	 */
 	 // ...
 
@@ -102,10 +108,12 @@ static struct platform_driver my_platform_driver = {
 	.probe = dtdemo_platdev_probe,
 	.remove = dtdemo_platdev_remove,
 	.driver = {
-		.name = "dtdemo_platdev", /* platform driver name must
-	       EXACTLY match the DT 'compatible' property - described in the DT
-		   for the board - for binding to occur;
-	       then, this module is loaded up and it's probe method invoked! */
+		.name = "dtdemo_platdev",
+		/* platform driver name must
+		 * EXACTLY match the DT 'compatible' property - described in the DT
+		 * for the board - for binding to occur;
+		 * then, this module is loaded up and it's probe method invoked!
+		 */
 #ifdef CONFIG_OF
 		.of_match_table = my_of_ids,
 #endif
@@ -117,27 +125,20 @@ static int dtdemo_platdrv_init(void)
 {
 	int ret_val;
 
-	pr_info("%s: inserted\n", DRVNAME);
+	pr_info("inserted\n");
 
-	// Register ourself to a bus
+	// Register ourself to the platform bus, as we're a platform device
 	ret_val = platform_driver_register(&my_platform_driver);
-	if (ret_val !=0) {
+	if (ret_val != 0) {
 		pr_err("platform value returned %d\n", ret_val);
 		return ret_val;
 	}
 	return 0;	/* success */
 }
-
 static void dtdemo_platdrv_cleanup(void)
 {
 	platform_driver_unregister(&my_platform_driver);
-	pr_info("%s: removed\n", DRVNAME);
+	pr_info("removed\n");
 }
-
 module_init(dtdemo_platdrv_init);
 module_exit(dtdemo_platdrv_cleanup);
-
-MODULE_LICENSE("Dual MIT/GPL");
-MODULE_AUTHOR("Kaiwan N Billimoria");
-MODULE_DESCRIPTION(
-"Demo: setting up a DT node, so that this platform drv can get bound");

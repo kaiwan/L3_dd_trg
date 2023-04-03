@@ -24,6 +24,11 @@
 #include <linux/platform_device.h>
 #include "../../convenient.h"
 
+MODULE_DESCRIPTION
+("Simple demo platform driver; can use as a template for a platform device/driver");
+MODULE_AUTHOR("Kaiwan N Billimoria");
+MODULE_LICENSE("Dual MIT/GPL");
+
 #define DRVNAME  "platdemo"
 /*------------------------ Structs, prototypes, .. ------------------*/
 static int platdev_probe(struct platform_device *);
@@ -33,9 +38,9 @@ static void plat0_release(struct device *);
 /* Platform Device */
 static struct platform_device plat0 = {
 #if 1	/* Make 1 to test using different names in the platform device and driver;
-		 * We find that the driver core then can't bind them, and the probe method
-	 	 * is never invoked...
-		 */
+	 * We find that the driver core then can't bind them, and the probe method
+	 * is never invoked...
+	 */
 	.name = "plat",
 	/* But then again, we can use the 'driver_override' member to force
 	 * a match to the driver's name! Then it still works..
@@ -51,7 +56,7 @@ static struct platform_device plat0 = {
 		 *   Plug in the device's resources here: memory ranges/IRQs/
 		 *   IOports/DMA channels/clocks/etc + optionally 'data'
 		 *   (typically a private structure).
-         *   The new way - on platforms that support it - is of course
+		 *   The new way - on platforms that support it - is of course
 		 *   to use the Device Tree (ARM/PPC) / ACPI tables (x86)
 		 */
 		.release = plat0_release,
@@ -73,34 +78,34 @@ static struct platform_driver platdrv = {
 };
 
 /* Most drivers have a global "context" struct that gets passed around .. */
-typedef struct MyCtx {
+struct stMyCtx {
 	//struct net_device *netdev;
 	int txpktnum, rxpktnum;
 	int tx_bytes, rx_bytes;
 	unsigned int data_xform;
 	//spinlock_t lock;
-} stMyCtx, *pstMyCtx;
+};
 
 /*--------------------------------------------------------------------*/
 
 static int platdev_probe(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
-	pstMyCtx pstCtx = dev_get_platdata(&pdev->dev);
+	struct stMyCtx *pstCtx = dev_get_platdata(dev);
 	/* could have done the above directly with:
-	 *  pstMyCtx pstCtx = pdev->dev.platform_data;
-	 * .. but using the kernel helper is recommended
+	 *  ... *pstCtx = pdev->dev.platform_data;
+	 * but using the kernel helper is recommended
 	 */
 
 	pstCtx->data_xform = 100;
-	dev_dbg(dev, "probe method invoked; setting data_xform to 100\n");
+	dev_dbg(dev, "probe method invoked; set data_xform to 100\n");
 	return 0;
 }
 
 static int platdev_remove(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
-	pstMyCtx pstCtx = dev_get_platdata(dev);
+	struct stMyCtx *pstCtx = dev_get_platdata(dev);
 
 	dev_dbg(dev, "remove method invoked\n data_xform=%d\n",
 	    pstCtx->data_xform);
@@ -115,16 +120,19 @@ static void plat0_release(struct device *dev)
 static int __init platdev_init(void)
 {
 	int res = 0;
-	pstMyCtx pstCtx = NULL;
+	struct stMyCtx *pstCtx = NULL;
 
 	pr_info("Initializing platform demo driver now...\n");
 
-	pstCtx = kzalloc(sizeof(stMyCtx), GFP_KERNEL);
+	pstCtx = kzalloc(sizeof(struct stMyCtx), GFP_KERNEL);
 	if (!pstCtx)
 		return -ENOMEM;
 	plat0.dev.platform_data = pstCtx;	// convenient to access later
 
-	/* platform_add_devices() is a wrapper over platform_device_register() */
+	/* Here, we're simply 'manually' adding a platform device (old-style)
+	 * the platform_add_devices() API, which is a wrapper over platform_device_register().
+	 * (The preferred modern way is to do so via the DT).
+	 */
 	res = platform_add_devices(platdemo_platform_devices,
 				  ARRAY_SIZE(platdemo_platform_devices));
 	if (res) {
@@ -132,7 +140,7 @@ static int __init platdev_init(void)
 		goto out_fail_pad;
 	}
 
-	// Register with the platform bus driver
+	// Register ourself with the platform bus driver, as we're a platform device
 	res = platform_driver_register(&platdrv);
 	if (res) {
 		pr_warn("platform_driver_register failed!\n");
@@ -154,7 +162,8 @@ static int __init platdev_init(void)
 static void __exit platdev_exit(void)
 {
 	struct device *dev = &plat0.dev;
-	pstMyCtx pstCtx = plat0.dev.platform_data;
+	struct stMyCtx *pstCtx = dev_get_platdata(dev);
+	//struct stMyCtx *pstCtx = plat0.dev.platform_data;
 
 	dev_dbg(dev, "unloading\n");
 	platform_driver_unregister(&platdrv);
@@ -164,8 +173,3 @@ static void __exit platdev_exit(void)
 
 module_init(platdev_init);
 module_exit(platdev_exit);
-
-MODULE_DESCRIPTION
-("Simple demo platform driver; can use as a template for a platform device/driver");
-MODULE_AUTHOR("Kaiwan N Billimoria");
-MODULE_LICENSE("Dual MIT/GPL");

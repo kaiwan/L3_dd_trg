@@ -1,0 +1,35 @@
+#!/bin/bash
+name=$(basename $0)
+
+trap 'echo "${name}: terminating ..." ; pkill runapp ; pkill ping ; sleep 1; pkill ping' INT QUIT EXIT 
+
+INTF=veth
+IP=192.168.1.201
+PING_IP=192.168.1.200
+
+ip a |grep ${INTF} || {
+  echo "Interface not visible?" ; exit 1
+}
+sudo ifconfig ${INTF} ${IP} up || {
+  echo "bringing intf up failed" ; exit 1
+}
+ifconfig ${INTF}
+
+LISTNR=listener_dgram
+pkill ${LISTNR}
+echo "Running listener process..."
+[ -x ./${LISTNR} ] && ./${LISTNR} &
+
+# Running a ping in the bg seems to trigger the n/w interface issue
+# and then the driver gets the packets being transmitted
+# [?]
+ping ${PING_IP} &
+
+TALKER=talker_dgram
+sudo pkill ${TALKER}
+echo "Running talker process..."
+MSG="hey, ${INTF}, wassup"
+[ -x ${TALKER} ] && {
+  sudo ./${TALKER} ${IP} "${MSG}"
+}
+

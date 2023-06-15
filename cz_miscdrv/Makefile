@@ -22,8 +22,8 @@
 # This enables you to use this Makefile as a template; just update this variable!
 # As well, the MYDEBUG variable (see it below) can be set to 'y' or 'n' (no being
 # the default)
-FNAME_C := cz_miscdrv
-#FNAME_C := cz_enh_miscdrv
+#FNAME_C := cz_miscdrv
+FNAME_C := cz_enh_miscdrv
 ifeq ($(FNAME_C),)
   $(error You MUST pass the C file like this:\
 make FNAME_C=csrc-filename-without-.c target-name)

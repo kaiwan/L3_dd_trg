@@ -71,6 +71,7 @@ static int <chipname>_probe(struct <foo>_client/dev *client/dev, // named as 'cl
 /*------- Matching the driver to the device ------------------
  * 3 different ways:
  *  by name : for platform & I2C devices
+ *  by VID,PID pair : for PCI and USB devices
  *  by DT 'compatible' property : for devices on the Device Tree
  *                                 (ARM32, Aarch64, PPC, etc)
  *  by ACPI ID : for devices on ACPI tables (x86)

@@ -144,8 +144,9 @@ skb-> head data                                                        tail   en
 	 * then it's not sent to our n/w interface via our talker_dgram app, so simply ignore it.
 	 */
 	udph = udp_hdr(skb);
-	pr_debug("UDP pkt::src=%d dest=%d len=%u\n", udph->source, udph->dest, udph->len);
-	if (udph->dest != PORTNUM)	// port # 54295
+	pr_debug("UDP pkt::src=%d dest=%d len=%u\n", ntohs(udph->source), ntohs(udph->dest),
+		 udph->len);
+	if (udph->dest != ntohs(PORTNUM))	// port # 54295
 		goto out_tx;
 	//------------------------------
 
@@ -257,7 +258,7 @@ static int vnet_probe(struct platform_device *pdev)
 #endif
 
 	ether_setup(ndev);
-	strlcpy(ndev->name, INTF_NAME, strlen(INTF_NAME)+1);
+	strlcpy(ndev->name, INTF_NAME, strlen(INTF_NAME) + 1);
 	memcpy(ndev->dev_addr, veth_MAC_addr, sizeof(veth_MAC_addr));
 
 #if 0

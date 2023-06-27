@@ -38,6 +38,10 @@ static int send_pkt(int counter, int sd, char *dest_ip, char *msg)
     dest_addr.sin_port = PORTNUM; // htons(PORTNUM); // short, network byte order
     dest_addr.sin_addr.s_addr = inet_addr(dest_ip);
     memset(&(dest_addr.sin_zero), '\0', 8); 
+	dest_addr.sin_family = AF_INET;	// host byte order
+	dest_addr.sin_port = htons(PORTNUM);	// short, network byte order
+	dest_addr.sin_addr.s_addr = inet_addr(dest_ip);
+	memset(&(dest_addr.sin_zero), '\0', 8);
 
 //printf("port=%d\n",dest_addr.sin_port);
 

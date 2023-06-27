@@ -59,6 +59,8 @@ int main(int argc, char **argv)
 
 	my_addr.sin_family = AF_INET; // host byte order
 	my_addr.sin_port = htons(MYPORT); // short, network byte order
+	my_addr.sin_family = AF_INET;	// host byte order
+	my_addr.sin_port = htons(MYPORT);	// short, network byte order
 	//my_addr.sin_addr.s_addr = inet_addr("10.10.1.5"); // DEST IP address
 	my_addr.sin_addr.s_addr = INADDR_ANY; // automatically fill with my IP zero the rest of the struct
 	memset(&(my_addr.sin_zero), '\0', 8);

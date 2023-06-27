@@ -34,10 +34,6 @@ static int send_pkt(int counter, int sd, char *dest_ip, char *msg)
 	struct sockaddr_in dest_addr;
 	int numbytes;
 
-	dest_addr.sin_family = AF_INET; // host byte order
-    dest_addr.sin_port = PORTNUM; // htons(PORTNUM); // short, network byte order
-    dest_addr.sin_addr.s_addr = inet_addr(dest_ip);
-    memset(&(dest_addr.sin_zero), '\0', 8); 
 	dest_addr.sin_family = AF_INET;	// host byte order
 	dest_addr.sin_port = htons(PORTNUM);	// short, network byte order
 	dest_addr.sin_addr.s_addr = inet_addr(dest_ip);
@@ -45,10 +41,11 @@ static int send_pkt(int counter, int sd, char *dest_ip, char *msg)
 
 //printf("port=%d\n",dest_addr.sin_port);
 
-	printf("talker: sending packet %3d over UDP/IP port %d now...\n", 
-		counter, PORTNUM);
+	printf("talker: sending packet %3d over UDP/IP port %d now...\n",
+	       counter, PORTNUM);
 	if ((numbytes = sendto(sd, msg, strlen(msg), 0,
-			 (struct sockaddr *)&dest_addr, sizeof(dest_addr))) == -1) {
+			       (struct sockaddr *)&dest_addr,
+			       sizeof(dest_addr))) == -1) {
 		perror("talker: sendto");
 		return -1;
 	}
@@ -66,9 +63,9 @@ static int recv_pkt(int sd)
 	char buf[MAXBUFLEN];
 
 	addr_len = sizeof(struct sockaddr);
-	if ((numbytes = recvfrom(sd, buf, MAXBUFLEN-1, 0,
-					 (struct sockaddr *)&src_addr,
-					 &addr_len)) == -1) {
+	if ((numbytes = recvfrom(sd, buf, MAXBUFLEN - 1, 0,
+				 (struct sockaddr *)&src_addr,
+				 &addr_len)) == -1) {
 		perror("recvfrom");
 		exit(1);
 	}
@@ -81,46 +78,48 @@ static int recv_pkt(int sd)
 }
 #endif
 
-
 int main(int argc, char *argv[])
 {
 	int sockfd, i;
 
 	if (geteuid()) {
-		fprintf(stderr,"%s: need to run as root.\n", argv[0]);
+		fprintf(stderr, "%s: need to run as root.\n", argv[0]);
 		exit(1);
 	}
 	if (argc != 3) {
-		fprintf(stderr,"usage: %s DEST-IP-address message\n", argv[0]);
+		fprintf(stderr, "usage: %s DEST-IP-address message\n", argv[0]);
 		//fprintf(stderr,"usage: %s interface-to-bind-to DEST-IP-address message\n", argv[0]);
 		exit(1);
 	}
 
-  if( (sockfd = socket(AF_INET, SOCK_DGRAM, 0)) == -1 ) { 
-        perror("socket");
-        exit(1);
-    }   
-
-#if 1
-	// Should be running as root!
-    if (setsockopt (sockfd, SOL_SOCKET, SO_BINDTODEVICE, INTF_NAME, strlen(INTF_NAME)) < 0) {
-        printf("\n%s:setsockopt failed...\n",argv[0]);
-        close(sockfd);
-        exit(1);
-    }
-    printf ("%s: successfully bound to interface '%s'\n", argv[0], INTF_NAME);
-#endif
-    i = 1;
-    while (1) {
-	if (send_pkt(i++, sockfd, argv[1], argv[2]) == -1) {
-		fprintf(stderr,"%s: send_pkt failed, aborting.\n", argv[0]);
-   		close(sockfd);
+	if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
+		perror("socket");
 		exit(1);
 	}
-	sleep(1);
-    }
+#if 1
+	// Should be running as root!
+	if (setsockopt
+	    (sockfd, SOL_SOCKET, SO_BINDTODEVICE, INTF_NAME,
+	     strlen(INTF_NAME)) < 0) {
+		printf("\n%s:setsockopt failed...\n", argv[0]);
+		close(sockfd);
+		exit(1);
+	}
+	printf("%s: successfully bound to interface '%s'\n", argv[0],
+	       INTF_NAME);
+#endif
+	i = 1;
+	while (1) {
+		if (send_pkt(i++, sockfd, argv[1], argv[2]) == -1) {
+			fprintf(stderr, "%s: send_pkt failed, aborting.\n",
+				argv[0]);
+			close(sockfd);
+			exit(1);
+		}
+		sleep(1);
+	}
 	//recv_pkt(sockfd);
-   	close(sockfd);
+	close(sockfd);
 
 	return 0;
 }

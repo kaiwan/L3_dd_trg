@@ -35,7 +35,7 @@ ip link |grep "${FIRST_INTF}.*UP" >/dev/null
   echo "${name}: error with interface ${FIRST_INTF}? shows as not being UP" ; exit 1
 }
 IP_FIRST_INTF=$(getIP ${FIRST_INTF})
-echo "FIRST_INTF=${FIRST_INTF} IP_FIRST_INTF=${IP_FIRST_INTF}"
+#echo "FIRST_INTF=${FIRST_INTF} IP_FIRST_INTF=${IP_FIRST_INTF}"
 IP_FIRST_INTF_SUBNET=$(echo ${IP_FIRST_INTF} |awk -F'.' '{printf("%d.%d.%d", $1, $2, $3)}')
 IP_VETH="${IP_FIRST_INTF_SUBNET}.210"  # 210: randomly chosen
 
@@ -53,11 +53,11 @@ sudo ifconfig ${INTF} ${IP_VETH} up || {
 }
 ifconfig ${INTF}
 
-LISTNR=listener_dgram
-[[ ! -f ${LISTNR} ]] && make
-pkill ${LISTNR}
-echo "Running listener process..."
-[ -x ./${LISTNR} ] && ./${LISTNR} &
+#LISTNR=listener_dgram
+#[[ ! -f ${LISTNR} ]] && make
+#pkill ${LISTNR}
+#echo "${name}: running listener process..."
+#[ -x ./${LISTNR} ] && ./${LISTNR} &
 
 # Running a ping in the bg seems to trigger the n/w interface issue
 # and then the driver gets the packets being transmitted
@@ -67,7 +67,7 @@ echo "Running listener process..."
 TALKER=talker_dgram
 [[ ! -f ${TALKER} ]] && make
 sudo pkill ${TALKER}
-echo "Running talker process..."
+echo "${name}: running talker process..."
 MSG="hey, ${INTF}, wassup"
 [ -x ${TALKER} ] && {
   sudo ./${TALKER} ${DEST_IP_VETH} "${MSG}"

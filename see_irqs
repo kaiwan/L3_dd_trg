@@ -1,0 +1,10 @@
+#!/bin/bash
+# Leverage the 'watch' program to keep an eye on hardirqs and softirqs !
+
+title1="Watch : /proc/interrupts : every 1s"
+cmd1="watch -n1 -d \"cat /proc/interrupts\""
+lxterminal --working-directory=${HOME}/ --command="${cmd1}" --title="${title1}" --geometry=1600x750 &
+
+title2="Watch : /proc/softirqs : every 1s"
+cmd2="watch -n1 -d \"cat /proc/softirqs\""
+lxterminal --working-directory=${HOME}/ --command="${cmd2}" --title="${title2}" --geometry=1200x350 &

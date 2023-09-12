@@ -301,7 +301,7 @@
 		};
 
 		/* our demo pseudo h/w chip
-                 * From DTSpec: https://github.com/devicetree-org/devicetree-specification/releases/download/v0.3-rc2/devicetree-specification-v0.3-rc2.pdf
+		 * From DTSpec: https://github.com/devicetree-org/devicetree-specification/releases/download/v0.3-rc2/devicetree-specification-v0.3-rc2.pdf
 		 * "This list of strings should be used by a client program for
 		 * device driver selection. The property value consists of a
 		 * concatenated list of null terminated strings, from most specific

@@ -45,7 +45,13 @@
 # Kernel Module Compile Results
 *.mod*
 *.cmd
+*~
+.*.swp
+*.xz
+*.old
+tags
 .tmp_versions/
+older/
 modules.order
 Module.symvers
 Mkfile.old

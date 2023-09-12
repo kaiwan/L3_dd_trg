@@ -1,0 +1,67 @@
+#!/bin/bash
+name=$(basename $0)
+
+# Turn on unofficial Bash 'strict mode'! V useful
+# "Convert many kinds of hidden, intermittent, or subtle bugs into immediate, glaringly obvious errors"
+# ref: http://redsymbol.net/articles/unofficial-bash-strict-mode/
+set -euo pipefail
+
+waiting()
+{
+  for i in $(seq 1 ${1})
+  do
+    printf "."
+	sleep 1
+  done
+  printf "\r"
+}
+
+NUMSEC=10
+LAST_TIMESTAMP=""
+echo "${name}: pl wait as data's gathered... (${NUMSEC}s)"
+waiting ${NUMSEC} &
+OUT=$(sudo argdist-bpfcc -C 't:irq:irq_handler_entry():int:args->irq' -n ${NUMSEC} 2>/dev/null)
+HDR="    Time   IRQ-freq                               IRQ"
+echo "${HDR}"
+
+cat /proc/interrupts > tmp
+IFS=$'\n'
+for REC in ${OUT}
+do
+	#echo "REC: $REC"
+	IRQfreq=0
+	IRQ=0
+
+	# timestamp
+	echo "${REC}" |grep "^\[[0-9][0-9]:" >/dev/null && {
+		TIMESTAMP=${REC}
+		continue
+	}
+	# IRQ frequency
+	echo "${REC}" |grep "[0-9].*args->irq = " >/dev/null && {
+		IRQfreq=$(echo ${REC}|awk '{print $1}')
+		#echo "irqfreq=$IRQfreq"
+	}
+	# IRQ #
+	echo "${REC}" |grep "args->irq = " >/dev/null && {
+		IRQ=$(echo ${REC}|awk -F= '{print $2}')
+		#echo "irq=$IRQ"
+	}
+
+	[[ ${IRQfreq} -ne 0 ]] && [[ ${IRQ} -ne 0 ]] && {
+	  # IRQ info: the o/p of /proc/interrupts includes all cpu's; so count the
+	  # field numbers to output based on this
+	  ncpus=$(nproc)
+	  AWK_CMD="{printf(\"%10s %16s %25s\n\", \$$((ncpus+2)),\$$((ncpus+3)),\$$((ncpus+4)))}" 
+	  #AWK_CMD="{print \$$((ncpus+2)),\$$((ncpus+3)),\$$((ncpus+4))}" 
+
+	  if [[ "${TIMESTAMP}" != "${LAST_TIMESTAMP}" ]] ; then
+		#printf "%s  " ${TIMESTAMP}
+		printf "%s  %3d       %4d  " ${TIMESTAMP} ${IRQfreq} ${IRQ}
+	  else
+		printf "            %3d       %4d  " ${IRQfreq} ${IRQ}
+	  fi
+	  grep -w ${IRQ} tmp | awk ${AWK_CMD}
+	  LAST_TIMESTAMP=${TIMESTAMP}
+	}
+done

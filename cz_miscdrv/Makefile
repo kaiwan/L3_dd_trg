@@ -92,6 +92,8 @@ STRIP := ${CROSS_COMPILE}strip
 # gcc-10 issue:
 #ccflags-y  += $(call cc-option,--allow-store-data-races)
 
+.PHONY: all clean help install tarxz-pkg checkpatch code-style indent \
+sa sa_cppcheck sa_gcc sa_flawfinder sa_sparse
 all:
 	@echo
 	@echo '--- Building : KDIR=${KDIR} ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} ccflags-y=${ccflags-y} ---'

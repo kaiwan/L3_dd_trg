@@ -63,20 +63,20 @@ obj-m          += ${FNAME_C}.o
 
 #--- Debug or production mode?
 # Set the MYDEBUG variable accordingly to y/n resp.
-# (Actually, debug info is always going to be generated when you build the
-# module on a debug kernel, where CONFIG_DEBUG_INFO is defined, making this
-# setting of the ccflags-y (or EXTRA_CFLAGS) variable mostly redundant (besides
-# the -DDEBUG).
-# This simply helps us influence the build on a production kernel, forcing
-# generation of debug symbols, if so required. Also, realize that the DEBUG
-# macro is turned on by many CONFIG_*DEBUG* options; hence, we use a different
-# macro var name, MYDEBUG).
+# NOTE:
+# It's important to understand that, actually, debug info is *always* going to
+# be generated when you build a module on a debug kernel, a kernel where
+# CONFIG_DEBUG_INFO=y . This makes the setting of the ccflags-y (or the older
+# EXTRA_CFLAGS) variable mostly redundant (besides the still useful -DDEBUG).
+# Also, realize that the macro named 'DEBUG' is turned on by many CONFIG_*DEBUG*
+# options; hence, we use a different macro name, viz, MYDEBUG.
 MYDEBUG := y
 ifeq (${MYDEBUG}, y)
-
 # https://www.kernel.org/doc/html/latest/kbuild/makefiles.html#compilation-flags
 # EXTRA_CFLAGS deprecated; use ccflags-y
-  ccflags-y   += -DDEBUG -g -ggdb -gdwarf-4 -Wall -fno-omit-frame-pointer -fvar-tracking-assignments
+# As such, we're told that we can't use anything but -O2 for kernel code;
+# -Og though, works & can help for debugging code so use it when 'debug' is on!
+  ccflags-y   += -DDEBUG -Og -g -ggdb -gdwarf-4 -Wall -fno-omit-frame-pointer -fvar-tracking-assignments
 else
   INSTALL_MOD_STRIP := 1
   ccflags-y   += -UDEBUG

@@ -22,13 +22,12 @@
 # This enables you to use this Makefile as a template; just update this variable!
 # As well, the MYDEBUG variable (see it below) can be set to 'y' or 'n' (no being
 # the default)
-#FNAME_C := cz_miscdrv
 FNAME_C := cz_enh_miscdrv
 ifeq ($(FNAME_C),)
   $(error You MUST pass the C file like this:\
 make FNAME_C=csrc-filename-without-.c target-name)
 else
-  $(info [FNAME_C = $(FNAME_C)])
+  $(info [FYI: FNAME_C = $(FNAME_C))
 endif
 #------------------------------------------------------------------
 
@@ -39,24 +38,25 @@ endif
 # your box to the appropriate path to the kernel src tree for that arch.
 ifeq ($(ARCH),arm)
   # *UPDATE* 'KDIR' below to point to the ARM Linux kernel source tree on your box
-  KDIR ?= ~/rpi_work/kernel_rpi/linux
+  export KDIR ?= /big/kernels/linux-4.19.94
+  #KDIR ?= ~/rpi_work/kernel_rpi/linux
 else ifeq ($(ARCH),arm64)
   # *UPDATE* 'KDIR' below to point to the ARM64 (Aarch64) Linux kernel source
   # tree on your box
-  KDIR ?= ~/kernel/linux-5.4
+  export KDIR ?= ~/kernel/linux-5.4
 else ifeq ($(ARCH),powerpc)
   # *UPDATE* 'KDIR' below to point to the PPC64 Linux kernel source tree on your box
-  KDIR ?= ~/kernel/linux-5.0
+  export KDIR ?= ~/kernel/linux-5.0
 else
   # 'KDIR' is the Linux 'kernel headers' package on your host system; this is
   # usually an x86_64, but could be anything, really (f.e. building directly
   # on a Raspberry Pi implies that it's the host)
-  KDIR ?= /lib/modules/$(shell uname -r)/build
+  export KDIR ?= /lib/modules/$(shell uname -r)/build
 endif
 
 # Compiler
 CC     := $(CROSS_COMPILE)gcc
-#CC := clang
+#CC     := clang
 
 PWD            := $(shell pwd)
 obj-m          += ${FNAME_C}.o
@@ -70,24 +70,53 @@ obj-m          += ${FNAME_C}.o
 # EXTRA_CFLAGS) variable mostly redundant (besides the still useful -DDEBUG).
 # Also, realize that the macro named 'DEBUG' is turned on by many CONFIG_*DEBUG*
 # options; hence, we use a different macro name, viz, MYDEBUG.
-MYDEBUG := y
+MYDEBUG := n
+DBG_STRIP := y
+
+ifeq (${MYDEBUG}, y)
+ $(info 'DEBUG' build)
+else
+ $(info 'Production' build)
+endif
+
 ifeq (${MYDEBUG}, y)
 # https://www.kernel.org/doc/html/latest/kbuild/makefiles.html#compilation-flags
 # EXTRA_CFLAGS deprecated; use ccflags-y
 # As such, we're told that we can't use anything but -O2 for kernel code;
 # -Og though, works & can help for debugging code so use it when 'debug' is on!
   ccflags-y   += -DDEBUG -Og -g -ggdb -gdwarf-4 -Wall -fno-omit-frame-pointer -fvar-tracking-assignments
+  DBG_STRIP := n
+  $(info KDIR = $(KDIR)])
 else
   INSTALL_MOD_STRIP := 1
-  ccflags-y   += -UDEBUG
+  ccflags-y   += -UDEBUG -Wall
+  $(info KDIR = $(KDIR))
 endif
 # We always keep the dynamic debug facility enabled; this allows us to turn
 # dynamically turn on/off debug printk's later... To disable it simply comment
 # out the following line
 ccflags-y   += -DDYNAMIC_DEBUG_MODULE
-
 KMODDIR ?= /lib/modules/$(shell uname -r)
 STRIP := ${CROSS_COMPILE}strip
+
+# Gain access to kernel configs:
+# Try to copy the kernel config from a few locations..
+$(shell sudo cp /boot/config-$(shell uname -r) $(KDIR)/.config 2>/dev/null)
+#$(shell sudo zcat /proc/config.gz > $(KDIR)/.config 2>/dev/null)
+include $(KDIR)/.config
+
+# Strip the module? Note:
+# a) Only strip debug symbols else it won't load correctly
+# b) WARNING! Don't strip modules when using CONFIG_MODULE_SIG* crytographic security
+ifdef CONFIG_MODULE_SIG
+  DBG_STRIP := n
+endif
+ifdef CONFIG_MODULE_SIG_ALL
+  DBG_STRIP := n
+endif
+ifdef CONFIG_MODULE_SIG_FORCE
+  DBG_STRIP := n
+endif
 
 # gcc-10 issue:
 #ccflags-y  += $(call cc-option,--allow-store-data-races)
@@ -104,7 +133,11 @@ all:
 	@${CC} --version|head -n1
 	@echo
 	make V=$(VERBOSE) -C $(KDIR) M=$(PWD) modules
-	$(shell [ "${MYDEBUG}" != "y" ] && ${STRIP} --strip-debug ./${FNAME_C}.ko)
+ifeq (${DBG_STRIP}, y)
+	${STRIP} ./${FNAME_C}.ko
+else
+	$(info NOT stripping module (as it's either a produciton build OR CONFIG_MODULE_SIG* is On)])
+endif
 install:
 	@echo
 	@echo "--- installing ---"

@@ -94,21 +94,25 @@ STRIP := ${CROSS_COMPILE}strip
 
 .PHONY: all clean help install tarxz-pkg checkpatch code-style indent \
 sa sa_cppcheck sa_gcc sa_flawfinder sa_sparse
+
+# Set VERBOSE to 1 to run make in verbose mode (make V=1 ...)
+VERBOSE = 0
+
 all:
 	@echo
 	@echo '--- Building : KDIR=${KDIR} ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} ccflags-y=${ccflags-y} ---'
 	@${CC} --version|head -n1
 	@echo
-	make -C $(KDIR) M=$(PWD) modules
+	make V=$(VERBOSE) -C $(KDIR) M=$(PWD) modules
 	$(shell [ "${MYDEBUG}" != "y" ] && ${STRIP} --strip-debug ./${FNAME_C}.ko)
 install:
 	@echo
 	@echo "--- installing ---"
 	@echo " [First, invoking the 'make' ]"
-	make
+	make V=$(VERBOSE)
 	@echo
 	@echo " [Now for the 'sudo make install' ]"
-	sudo make -C $(KDIR) M=$(PWD) modules_install
+	sudo make V=$(VERBOSE) -C $(KDIR) M=$(PWD) modules_install
 	@echo " sudo depmod"
 	sudo depmod
 	@echo " [If !debug, stripping debug info from ${KMODDIR}/extra/${FNAME_C}.ko]"
@@ -117,7 +121,7 @@ clean:
 	@echo
 	@echo "--- cleaning ---"
 	@echo
-	make -C $(KDIR) M=$(PWD) clean
+	make V=$(VERBOSE) -C $(KDIR) M=$(PWD) clean
 # from 'indent'
 	rm -f *~
 
@@ -128,8 +132,8 @@ INDENT := indent
 
 # code-style : "wrapper" target over the following kernel code style targets
 code-style:
-	make indent
-	make checkpatch
+	make V=$(VERBOSE) indent
+	make V=$(VERBOSE) checkpatch
 
 # indent- "beautifies" C code - to conform to the the Linux kernel
 # coding style guidelines.
@@ -147,7 +151,7 @@ endif
 
 # Detailed check on the source code styling / etc
 checkpatch:
-	make clean
+	make V=$(VERBOSE) clean
 	@echo
 	@echo "--- kernel code style check with checkpatch.pl ---"
 	@echo
@@ -157,10 +161,10 @@ checkpatch:
 #--- Static Analysis
 # sa : "wrapper" target over the following kernel static analyzer targets
 sa:
-	make sa_sparse
-	make sa_gcc
-	make sa_flawfinder
-	make sa_cppcheck
+	make V=$(VERBOSE) sa_sparse
+	make V=$(VERBOSE) sa_gcc
+	make V=$(VERBOSE) sa_flawfinder
+	make V=$(VERBOSE) sa_cppcheck
 
 # static analysis with sparse
 sa_sparse:
@@ -168,28 +172,28 @@ ifeq (,$(shell which sparse))
 	$(error ERROR: install sparse first)
 endif
 
-	make clean
+	make V=$(VERBOSE) clean
 	@echo
 	@echo "--- static analysis with sparse ---"
 	@echo
 # if you feel it's too much, use C=1 instead
 # NOTE: deliberately IGNORING warnings from kernel headers!
-	make -Wsparse-all C=2 CHECK="/usr/bin/sparse --os=linux --arch=$(ARCH)" -C $(KDIR) M=$(PWD) modules 2>&1 |egrep -v "^\./include/.*\.h|^\./arch/.*\.h"
+	make V=$(VERBOSE) -Wsparse-all C=2 CHECK="/usr/bin/sparse --os=linux --arch=$(ARCH)" -C $(KDIR) M=$(PWD) modules 2>&1 |egrep -v "^\./include/.*\.h|^\./arch/.*\.h"
 
 # static analysis with gcc
 sa_gcc:
-	make clean
+	make V=$(VERBOSE) clean
 	@echo
 	@echo "--- static analysis with gcc ---"
 	@echo
-	make W=1 -C $(KDIR) M=$(PWD) modules
+	make V=$(VERBOSE) W=1 -C $(KDIR) M=$(PWD) modules
 
 # static analysis with flawfinder
 sa_flawfinder:
 ifeq (,$(shell which flawfinder))
 	$(error ERROR: install flawfinder first)
 endif
-	make clean
+	make V=$(VERBOSE) clean
 	@echo
 	@echo "--- static analysis with flawfinder ---"
 	@echo
@@ -200,7 +204,7 @@ sa_cppcheck:
 ifeq (,$(shell which cppcheck))
 	$(error ERROR: install cppcheck first)
 endif
-	make clean
+	make V=$(VERBOSE) clean
 	@echo
 	@echo "--- static analysis with cppcheck ---"
 	@echo
@@ -210,7 +214,7 @@ endif
 PKG_NAME := ${FNAME_C}
 tarxz-pkg:
 	rm -f ../${PKG_NAME}.tar.xz 2>/dev/null
-	make clean
+	make V=$(VERBOSE) clean
 	@echo
 	@echo "--- packaging ---"
 	@echo

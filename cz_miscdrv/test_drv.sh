@@ -15,8 +15,13 @@ eval "$@"
 	echo "Usage : ${name} pathname-to-driver-to-test.ko"
 	exit 1
 }
-
+FIRSTCHAR=$(printf %.1s "$1")
+[[ "${FIRSTCHAR}" = "." ]] && {
+  echo "${name}: don't begin with '.' (just give 'kmod.ko')"
+  exit 1
+}
 DRV=$1
+DRVNAME=${DRV::-3}
 sudo rmmod ${DRV::-3} 2>/dev/null
 runcmd "sudo insmod ${DRV}"
 lsmod|grep ${DRV::-3} || {

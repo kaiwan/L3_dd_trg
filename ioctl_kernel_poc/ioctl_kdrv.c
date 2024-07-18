@@ -58,6 +58,7 @@ static int iok_ioctl(struct inode *ino, struct file *filp, unsigned int cmd,
 		return -ENOTTY;
 	}
 
+#if 0
 	/* Verify direction */
 	if (_IOC_DIR(cmd) & _IOC_READ)
 		/* userspace read => kernel-space -> userspace write operation */
@@ -70,7 +71,7 @@ static int iok_ioctl(struct inode *ino, struct file *filp, unsigned int cmd,
 		    !access_ok(VERIFY_READ, (void __user *)arg, _IOC_SIZE(cmd));
 	if (err)
 		return -EFAULT;
-
+#endif
 	switch (cmd) {
 	case IOCTL_KDRV_IOCRESET:
 		MSG("In option: IOCTL_KDRV_IOCRESET\n");

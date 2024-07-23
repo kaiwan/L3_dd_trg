@@ -49,12 +49,13 @@
  * czero_read:
  * Simple zero source implementation: just fill a buffer with zeroes
  * and pass it back to user-space.
- * This is an enhanced version of the previous driver- it populates a
- * user-space buffer of *any* size (not just to a max of 1 page as in the
- * previous driver).
+ * This is an enhanced version of the earier czero_read_onepage() method (see
+ * it below, commented out) - it populates a user-space buffer of *any* size
+ * (not just to a max of 1 page as in the 'onepage' version).
  *
- * Can test the "czero" device read with (one possibility):
+ * Can test this "czero" device read with (one possibility):
  *  dd if=/dev/czero of=/tmp/testz2 bs=4k count=10000
+ * (here we're reading 4k*10,000 ~= 40 MB of 'zeroes' from our 'zero' device)
  *
  * To greatly speed up the xfer, try:
  * 1. revoke the printk's (by undefining DEBUG)
@@ -96,13 +97,21 @@ static ssize_t czero_read(struct file *filp, char __user *buf,
 	memset(zbuf, 0, mcount);
 #endif
 
-#define FILL_PATTERN   0
+#define FILL_PATTERN   1
 #if (FILL_PATTERN == 1)
-	for (i = 0; i < mcount / 4; i++) {	// done for little-endian
+	/* lets fill it with 'deadface' ! */
+	for (i = 0; i < mcount / 4; i++) {
+#ifndef __BIG_ENDIAN	 // little-endian
 		zbuf[(i * 4) + 0] = 0xce;
 		zbuf[(i * 4) + 1] = 0xfa;
 		zbuf[(i * 4) + 2] = 0xad;
 		zbuf[(i * 4) + 3] = 0xde;
+#else	 // big-endian
+		zbuf[(i * 4) + 0] = 0xde;
+		zbuf[(i * 4) + 1] = 0xad;
+		zbuf[(i * 4) + 2] = 0xfa;
+		zbuf[(i * 4) + 3] = 0xce;
+#endif
 	}
 	print_hex_dump_bytes(" ", DUMP_PREFIX_OFFSET, zbuf, mcount / 4);
 #endif
@@ -147,15 +156,15 @@ static ssize_t czero_read(struct file *filp, char __user *buf,
 }
 
 #if 0
-static ssize_t czero_read(struct file *filp, char __user *buf,
+static ssize_t czero_read_onepage(struct file *filp, char __user *buf,
 			  size_t count, loff_t *offp)
 {
 	char *zbuf;
 	int status;
 
 	/* simplification */
-	if (count > MAX_READ_COUNT)
-		count = MAX_READ_COUNT;
+	if (count > PAGE_SIZE)
+		count = PAGE_SIZE;
 
 	zbuf = kzalloc(count, GFP_KERNEL);
 	if (unlikely(zbuf == NULL)) {
@@ -208,7 +217,7 @@ static ssize_t cnul_read(struct file *filp, char __user * buf,
 	 * the advantage of doing it this way is that a user
 	 * can do stuff like truncate file fname by doing:
 	 * $ cat /dev/cnul > fname
-	 * or one could just:
+	 * Alternatively, one could just do this:
 	 * return -ENOSYS;   causing perror to show : "Function not implemented"
 	 */
 }
@@ -296,5 +305,5 @@ module_init(cz_init_module);
 module_exit(cz_cleanup_module);
 
 MODULE_AUTHOR("Kaiwan NB, kaiwanTECH");
-MODULE_DESCRIPTION("Simple (demo) null and zero memory driver driver");
+MODULE_DESCRIPTION("Simple (demo) null and zero memory char (misc) driver");
 MODULE_LICENSE("Dual MIT/GPL");

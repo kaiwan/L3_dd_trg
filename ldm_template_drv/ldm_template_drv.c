@@ -4,8 +4,8 @@
  * This 'template' does NOT propose to be complete in any manner whatsoever.
  * Use at your own discretion... it's written in the "hope it might be useful"
  * spirit of course...
- * ALSO, it's just pseudo-code; we expect you'll make a copy and edit it,
- * correcting and adding stuff as you go along...
+ * ALSO, it's just pseudo-code, it won't compile in this state; we expect you'll
+ * make a copy and edit it, correcting and adding stuff as you go along...
  *
  * (c) 2020 Kaiwan N Billimoria, kaiwanTECH
  * Dual MIT/GPL
@@ -69,9 +69,11 @@ static int <chipname>_probe(struct <foo>_client/dev *client/dev, // named as 'cl
 
 
 /*------- Matching the driver to the device ------------------
- * 3 different ways:
- *  by name : for platform & I2C devices
- *  by VID,PID pair : for PCI and USB devices
+ * The driver, on init, registers with the appropriate bus driver
+ * (for the bus it's on). This has the bus driver run a 'matching loop'..
+ * The possible method for the match - 4 different ways - are:
+ *  by name                     : for platform & I2C devices
+ *  by VID,PID pair             : for PCI and USB devices
  *  by DT 'compatible' property : for devices on the Device Tree
  *                                 (ARM32, Aarch64, PPC, etc)
  *  by ACPI ID : for devices on ACPI tables (x86)
@@ -86,13 +88,30 @@ static int <chipname>_probe(struct <foo>_client/dev *client/dev, // named as 'cl
  */
 static const struct <foo>_device_id <chipname>_id[] = {
 	{ "<chipname>", 0 },		/* matching by name; required for platform and i2c
-								 * devices & drivers */
+					 * devices & drivers */
 	// f.e.: { "pcf8563", 0 },
 	{ }
 };
 MODULE_DEVICE_TABLE(<foo>, <chipname>_id);
 
-/* 2. By DT 'compatible' property : for devices on the Device Tree
+/* 2. By VID,PID pair             : for PCI and USB devices
+ * (example here from drivers/net/usb/plusb.c)
+ * USB_DEVICE(vend, prod)
+ */
+static const struct usb_device_id       products [] = {
+{
+	USB_DEVICE(0x067b, 0x0000),     // PL-2301
+	.driver_info =  (unsigned long) &prolific_info,
+}, {
+	USB_DEVICE(0x067b, 0x0001),     // PL-2302
+	.driver_info =  (unsigned long) &prolific_info,
+},
+	[ ... ]
+	{ },	// end
+};
+MODULE_DEVICE_TABLE(usb, products);
+
+/* 3. By DT 'compatible' property : for devices on the Device Tree
  *                                 (ARM32, Aarch64, PPC, etc)
  */
 #ifdef CONFIG_OF
@@ -112,7 +131,7 @@ static const struct of_device_id <chipname>_of_match[] = {
 MODULE_DEVICE_TABLE(of, <chipname>_of_match);
 #endif
 
-/* 3. By ACPI ID : for devices on ACPI tables (x86) */
+/* 4. By ACPI ID : for devices on ACPI tables (x86) */
 static const struct acpi_device_id <chipname>_acpi_id[] = {
 						/* x86: matching by ACPI ID */
 	{"MMA7660", 0},
@@ -161,5 +180,8 @@ static struct <foo>_driver <chipname>_driver = {
  *  pci, platform, pnp, scsi, sdio, serio, spi, tty, usb, usb_serial, vme
  * There are several foo_register_driver() APIs; see a list (for 5.4.0) here:
  *  https://gist.github.com/kaiwan/04cfaca711aed9e59282601fafd8aa24
+ *
+ * This internally invokes the registration of this cient driver with the
+ * 'foo' bus driver!
  */
 module_<foo>_driver(<chipname>_driver);

@@ -1,0 +1,120 @@
+#!/bin/bash
+set -euo pipefail
+
+DEFAULT_DRIVER="usbhid"
+### KEEP this UPDATED ! ################################################
+# 0d8d:1516 Promotion & Display Technology, Ltd Wireless Present   (PDL)
+MY_DRIVER="laserp"
+MYUSB_VID=0D8D
+MYUSB_PID=1516
+#########################################################################
+
+die()
+{
+ echo >&2 "FATAL: $*" ; exit 1
+}
+
+unbind()
+{
+local USB_DEVICE=$1
+echo "Unbinding $USB_DEVICE from $DEFAULT_DRIVER"
+err=$(sudo sh -c 'echo -n '${USB_DEVICE}' > /sys/bus/usb/drivers/'$DEFAULT_DRIVER'/unbind' 2>&1)
+if [ ! -z "$err" ]
+then
+	echo -e "\e[1m\e[41m[ERROR] Could not unbind:" $err "\e[0m"
+	echo "The reason for this might be: "
+	echo "(*)Device has already been unbinded from" $DEFAULT_DRIVER
+	echo "(*)"$DEFAULT_DRIVER " is not responsible for this device"
+	echo "(*)"$USB_DEVICE "is not the correct USB device"
+fi
+}
+
+bind()
+{
+local USB_DEVICE=$1
+echo "Binding $1 to $MY_DRIVER"
+err=$(sudo sh -c 'echo -n '$USB_DEVICE' > /sys/bus/usb/drivers/'$MY_DRIVER'/bind' 2>&1)
+if [ ! -z "$err" ]
+then
+	echo "[ERROR] Could not bind:" $err
+	echo "The reason for this might be: "
+	echo "(*)Device has already been bound to $MY_DRIVER"
+	echo "(*)$MY_DRIVER does not support this device"
+fi
+}
+
+
+#--- 'main'
+
+lsmod|grep ${MY_DRIVER} >/dev/null  || die "insert your driver ${MY_DRIVER} first and retry"
+[[ $# -ne 1 ]] && {
+  echo "Usage: $0 <usb-bus-#>
+F.e. $0 1-2:1.0
+(TIPs: 
+  - Check under /sys/bus/usb/drivers/${DEFAULT_DRIVER} and/or look up dmesg
+  - Just specify the first of the bus addresses as the argument (f.e. rebind 1-2:1.0)"
+  res=$(ls -1d /sys/bus/usb/drivers/${DEFAULT_DRIVER}/[0-9]* 2>/dev/null) || true
+  [[ -z "${res}" ]] && echo "Currently there aren't any (under /sys/bus/usb/drivers/${DEFAULT_DRIVER})" || echo "
+Here's the currently assigned bus addresses:
+
+${res}
+"
+  exit 1
+}
+
+MYUSB_VID=${MYUSB_VID^^} # to uppercase
+MYUSB_PID=${MYUSB_PID^^}
+USB_DEVICE="$1"
+
+# Auto check
+if [[ -f /sys/bus/usb/drivers/${DEFAULT_DRIVER}/${USB_DEVICE}/modalias ]] ; then
+ echo "Checking if the VID:PID is correct for the given device on the given bus"
+ # the 'modalias' looks like this (for example):
+ # usb:v0D8Dp1516d1110dc00dsc00dp00ic03isc01ip02in00
+
+ UVID=$(cut -d: -f2 /sys/bus/usb/drivers/${DEFAULT_DRIVER}/${USB_DEVICE}/modalias |cut -c2-5)
+ UPID=$(cut -d: -f2 /sys/bus/usb/drivers/${DEFAULT_DRIVER}/${USB_DEVICE}/modalias |cut -c7-10)
+ echo "(FYI: for provided bus/device VID:PID is ${UVID}:${UPID}"
+ lsusb | grep -i "${UVID}:${UPID}" || {
+   echo "No USB device match, aborting" ; exit 1
+ } && echo ")"
+ if [[ "${UVID}" = "${MYUSB_VID}" ]] && [[ "${UPID}" = "${MYUSB_PID}" ]] ; then
+   echo " match, proceeding"
+   lsusb | grep -i "${UVID}:${UPID}" || {
+     echo "No USB device match, aborting" ; exit 1
+   }
+ else
+   echo "*FATAL* no match for provided bus/device and this driver (${MY_DRIVER}), aborting"
+   exit 1
+ fi
+fi
+
+USB_DEVICE_LESS2="${1::-2}"  # rm last 2
+USB_DEVICE_FILES=/sys/bus/usb/drivers/${DEFAULT_DRIVER}/${USB_DEVICE_LESS2}*
+
+ls -1d ${USB_DEVICE_FILES}/[0-9]* >/dev/null 2>&1 || die "No file(s) to rebind currently exist: ${USB_DEVICE_FILES}/[0-9]*"
+
+declare -a busarr
+for buslink in $(ls -1d ${USB_DEVICE_FILES})
+do
+  bus=$(basename ${buslink})
+  #echo "bus = ${bus}"
+  busarr+=(${bus})
+  unbind ${bus}
+done
+sleep 1
+
+for i in ${!busarr[@]}; do
+  #echo "busarr[$i] = ${busarr[$i]}"
+  bind ${busarr[$i]}
+done
+exit 0
+
+
+for buslink in $(ls -1d ${USB_DEVICE_FILES})
+do
+  bus=$(basename ${buslink})
+  #echo "bus = ${bus}"
+  bind ${bus}
+done
+exit 0

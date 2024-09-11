@@ -1,6 +1,7 @@
 /*
  * L3_dd_trg/input_drv_mouse
  * Mostly from the excellent ELDD book...
+ * vms = 'virtual mouse'
  */
 #define pr_fmt(fmt) "%s:%s(): " fmt, KBUILD_MODNAME, __func__
 
@@ -30,7 +31,6 @@ MODULE_DESCRIPTION("Input driver - example, simple mouse emulator demo; ref: ELD
 MODULE_LICENSE("Dual MIT/GPL");
 MODULE_VERSION("0.1");
 
-#define OURMODNAME		"input_drv_mouse"
 #define SYSFS_FILE1		vms
 
 static struct input_dev *vms_input_dev;
@@ -52,14 +52,18 @@ struct device_attribute {
 */
 
 static ssize_t vms_store(struct device *dev,
-					   struct device_attribute *attr,
-					   const char *buf, size_t count)
+			 struct device_attribute *attr, const char *buf, size_t count)
 {
 	int x, y;
 
+	/*
+	 * A userspace process - coord_gen - is emulating our virtual mouse
+	 * movements by continually (once/sec) writing (x,y,z) (random) coordinates
+	 * to us; they arrive in 'buf'. Read them in and process (we ignore the 'z'
+	 * value (always 0))
+	 */
 	sscanf(buf, "%d%d", &x, &y);
-	dev_dbg(dev, "%s(): count=%zu; (%d, %d) reported up\n",
-		__func__, count, x, y);
+	dev_dbg(dev, "%s(): count=%zu; (%d, %d) reported up\n", __func__, count, x, y);
 
 	/* Report relative coordinates via the event interface */
 	input_report_rel(vms_input_dev, REL_X, x);
@@ -67,44 +71,48 @@ static ssize_t vms_store(struct device *dev,
 	input_sync(vms_input_dev);
 
 	/*
-	"- The first statement generates a REL_X event or a relative device movement in the X direction.
-	 - The second produces a REL_Y event or a relative movement in the Y direction. 
-	 - input_sync() indicates that this event is complete, so the input subsystem collects these
-	  two events into a single evdev packet and sends it out of the door through /dev/input/eventX, 
-	  where X is the interface number assigned to the vms driver. 
+	   "- The first statement generates a REL_X event or a relative device movement in the X direction.
+ 	    - The second produces a REL_Y event or a relative movement in the Y direction. 
+	    - input_sync() indicates that this event is complete, so the input subsystem collects these
+	   two events into a single evdev packet and sends it out of the door through /dev/input/eventX, 
+	   where X is the interface number assigned to the vms driver. 
 
-	  An application reading this file will receive event packets in the input_event format described earlier.
+	   An application reading this file will receive event packets in the input_event format described earlier.
 
-Run the coords_gen user mode app in one window.. 
+	   Run the coords_gen user mode app in one window.. 
 
-	Can use the evtest app to 'see' events as they occur: f.e.:
-$ sudo evtest /dev/input/event7
-Input driver version is 1.0.1
-Input device ID: bus 0x0 vendor 0x0 product 0x0 version 0x0
-Input device name: "Unknown"
-Supported events:
-  Event type 0 (EV_SYN)
-  Event type 2 (EV_REL)
-    Event code 0 (REL_X)
-    Event code 1 (REL_Y)
-Properties:
-Testing ... (interrupt to exit)
-Event: time 1610437930.721948, type 2 (EV_REL), code 0 (REL_X), value -3
-Event: time 1610437930.721948, type 2 (EV_REL), code 1 (REL_Y), value 6
-Event: time 1610437930.721948, -------------- SYN_REPORT ------------
-Event: time 1610437931.724963, type 2 (EV_REL), code 0 (REL_X), value -17
-Event: time 1610437931.724963, type 2 (EV_REL), code 1 (REL_Y), value -15
-Event: time 1610437931.724963, -------------- SYN_REPORT ------------
-Event: time 1610437932.745446, type 2 (EV_REL), code 0 (REL_X), value -13
-Event: time 1610437932.745446, type 2 (EV_REL), code 1 (REL_Y), value -15
-Event: time 1610437932.745446, -------------- SYN_REPORT ------------
-[ ... ]
-^C$
+	   Can use the evtest app to 'see' events as they occur: f.e.:
+	   $ sudo evtest /dev/input/event7
+	   Input driver version is 1.0.1
+	   Input device ID: bus 0x0 vendor 0x0 product 0x0 version 0x0
+	   Input device name: "Unknown"
+	   Supported events:
+	   Event type 0 (EV_SYN)
+	   Event type 2 (EV_REL)
+	   Event code 0 (REL_X)
+	   Event code 1 (REL_Y)
+	   Properties:
+	   Testing ... (interrupt to exit)
+	   Event: time 1610437930.721948, type 2 (EV_REL), code 0 (REL_X), value -3
+	   Event: time 1610437930.721948, type 2 (EV_REL), code 1 (REL_Y), value 6
+	   Event: time 1610437930.721948, -------------- SYN_REPORT ------------
+	   Event: time 1610437931.724963, type 2 (EV_REL), code 0 (REL_X), value -17
+	   Event: time 1610437931.724963, type 2 (EV_REL), code 1 (REL_Y), value -15
+	   Event: time 1610437931.724963, -------------- SYN_REPORT ------------
+	   Event: time 1610437932.745446, type 2 (EV_REL), code 0 (REL_X), value -13
+	   Event: time 1610437932.745446, type 2 (EV_REL), code 1 (REL_Y), value -15
+	   Event: time 1610437932.745446, -------------- SYN_REPORT ------------
+	   [ ... ]
+	   ^C$
 
-Alternately, to request gpm (general purpose mouse) to attach to this event interface
-and accordingly chase the cursor around your screen, do this:
- sudo gpm -m /dev/input/eventX -t evdev
-*/
+	   Alternately, to request gpm (general purpose mouse) to attach to this event interface
+	   and accordingly chase the cursor around your screen, do this:
+	   sudo gpm -m /dev/input/eventX -t evdev
+	     # -m : Choose the mouse file to open. Must be before -t and -o.
+	     # -t : name
+              Set the mouse type. Use `-t help' to get a list of allowable types.  Use -t after  you  selected
+              the mouse device with -m.
+	 */
 
 	return count;
 }
@@ -113,7 +121,7 @@ and accordingly chase the cursor around your screen, do this:
  * dev_attr_<name> here...
  * The name of the 'show' callback function is llkdsysfs_pgoff_show
  */
-static DEVICE_ATTR_WO(vms);	/* it's show callback is above.. */
+static DEVICE_ATTR_WO(vms);	/* it's store callback is above.. */
 
 /*
  * From <linux/device.h>:
@@ -132,7 +140,7 @@ and in <linux/sysfs.h>:
 }
  */
 
-static int __init input_drv_mouse_init(void)
+static int __init input_drv_vmouse_init(void)
 {
 	int stat = 0;
 
@@ -140,15 +148,14 @@ static int __init input_drv_mouse_init(void)
 		pr_warn("sysfs unsupported! Aborting ...\n");
 		return -EINVAL;
 	}
-
 	// LDM: register with a bus; here we register our platform device with the platform bus
 
 	/* 0. Register a (dummy) platform device; required as we need a
-	 * struct device *dev pointer to create the sysfs file with
+	 * struct device *dev pointer to create the sysfs file via
 	 * the device_create_file() API:
 	 *  struct platform_device *platform_device_register_simple(
-	 *		const char *name, int id,
-	 *		const struct resource *res, unsigned int num);
+	 *              const char *name, int id,
+	 *              const struct resource *res, unsigned int num);
 	 */
 #define PLAT_NAME	"vms"
 	sysfs_demo_platdev = platform_device_register_simple(PLAT_NAME, -1, NULL, 0);
@@ -157,7 +164,6 @@ static int __init input_drv_mouse_init(void)
 		pr_info("error (%d) registering our platform device, aborting\n", stat);
 		goto out1;
 	}
-
 	// 1. Create our sysfile file :
 	/* The device_create_file() API creates a sysfs attribute file for
 	 * given device (1st parameter); the second parameter is the pointer
@@ -165,22 +171,22 @@ static int __init input_drv_mouse_init(void)
 	 * instantiated by our DEV_ATTR{_RW|RO} macros above ...
 	 * API used:
 	 * int device_create_file(struct device *dev,
-	 *		const struct device_attribute *attr);
+	 *              const struct device_attribute *attr);
 	 */
 	stat = device_create_file(&sysfs_demo_platdev->dev, &dev_attr_vms);
-	    /*
-	     * A potentially confusing aspect: as this is the first time, we
-	     * explain it via this comment:
-	     * The &dev_attr_SYSFS_FILE1 above (2nd param to the
-	     * device_create_file() API), is actually *instantiated* via this
-	     * declaration above:
-	     *  static DEVICE_ATTR_WO(SYSFS_FILE1);
-	     * This DEVICE_ATTR{_RW|RO|WO}() macro instantiates a
-	     *  struct device_attribute dev_attr_<name>    data structure!
-	     * ... and hence we automatically get the rd/wr callbacks registered.
-	     * (IOW, the DEVICE_ATTR_XX(name) macro becomes a
-	     *  struct device_attribute dev_attr_name data structure!)
-	     */
+	/*
+	 * A potentially confusing aspect: as this is the first time, we
+	 * explain it via this comment:
+	 * The &dev_attr_vms above (2nd param to the
+	 * device_create_file() API), is actually *instantiated* via this
+	 * declaration above:
+	 *  static DEVICE_ATTR_WO(vms);
+	 * This DEVICE_ATTR{_RW|RO|WO}() macro instantiates a
+	 *  struct device_attribute dev_attr_<name>    data structure!
+	 * ... and hence we automatically get the rd/wr callbacks registered.
+	 * (IOW, the DEVICE_ATTR_XX(name) macro becomes a
+	 *  struct device_attribute dev_attr_name data structure!)
+	 */
 	if (stat) {
 		pr_info("device_create_file failed (%d), aborting now\n", stat);
 		goto out2;
@@ -199,13 +205,13 @@ static int __init input_drv_mouse_init(void)
 	/* Announce that the virtual mouse will generate relative coordinates */
 	set_bit(EV_REL, vms_input_dev->evbit);
 	/* declare the event codes that our virt mouse produces */
-	set_bit(REL_X, vms_input_dev->relbit); // rel 'x' movement
-	set_bit(REL_Y, vms_input_dev->relbit); // rel 'y' movement
+	set_bit(REL_X, vms_input_dev->relbit);	// rel 'x' movement
+	set_bit(REL_Y, vms_input_dev->relbit);	// rel 'y' movement
 
 #if 0
 	// If your virtual mouse is also capable of generating button clicks, you need to add this
-	set_bit(EV_KEY, vms_input_dev->evbit); /* Event Type is EV_KEY */
-	set_bit(BTN_0, vms_input_dev->keybit); /* Event Code is BTN_0 */
+	set_bit(EV_KEY, vms_input_dev->evbit);	/* Event Type is EV_KEY */
+	set_bit(BTN_0, vms_input_dev->keybit);	/* Event Code is BTN_0 */
 #endif
 
 	// LDM: register with a kernel framework; here we register with the input subsystem
@@ -225,7 +231,7 @@ static int __init input_drv_mouse_init(void)
 	return stat;
 }
 
-static void __exit input_drv_mouse_cleanup(void)
+static void __exit input_drv_vmouse_cleanup(void)
 {
 	/* Unregister from kernel input framework */
 	input_unregister_device(vms_input_dev);
@@ -238,5 +244,5 @@ static void __exit input_drv_mouse_cleanup(void)
 	pr_info("removed\n");
 }
 
-module_init(input_drv_mouse_init);
-module_exit(input_drv_mouse_cleanup);
+module_init(input_drv_vmouse_init);
+module_exit(input_drv_vmouse_cleanup);

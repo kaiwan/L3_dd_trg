@@ -1,10 +1,12 @@
 /*
  * Linux input driver for a wireless USB mouse.
  * (The model I happen to currently have is one from Dell:
- *   04ca:00a8 Lite-On Technology Corp. Dell Wireless Mouse WM118)
+ *   04ca:00a8 Lite-On Technology Corp. Dell Wireless Mouse WM118
+ * To see more on how wireless (USB receiver) mice work, see the doc/readme).
  * Kaiwan NB.
+ *
  * Credits:
- * Based on GPL 'USB-driver' by @AcollaMolla (Anton Engman)
+ * Based on the GPL-ed 'USB-driver' by @AcollaMolla (Anton Engman)
  *  https://github.com/AcollaMolla/USB-driver
  */
 #define pr_fmt(fmt) "%s:%s(): " fmt, KBUILD_MODNAME, __func__
@@ -55,9 +57,9 @@ ERROR:
 ...
 [  865.106942] mymouse_usb:usb_wimouse_irq(): urb stat=-2
 
-reset by 
+reset by
 
--check which is the latest /dev/input/eventN file 
+-check which is the latest /dev/input/eventN file
 ls -lt /dev/input
 and
 read it via evtest
@@ -69,29 +71,28 @@ Seems to Require that inputX is READ by something/anything, then it works..
 */
 
 	switch (urb->status) {
-	case 0:			/* success */
+	case 0:		/* success */
 		break;
 	case -ECONNRESET:	/* unlink */
-	case -ENOENT:	  // -2
-	case -ESHUTDOWN:  // -108
+	case -ENOENT:		// -2
+	case -ESHUTDOWN:	// -108
 		/* This urb is terminated, clean up */
 		dev_dbg(&dev->dev, "%s - urb shutting down with status: %d\n",
-                       __func__, urb->status);
+			__func__, urb->status);
 		return;
-	/* -EPIPE:  should clear the halt */
+		/* -EPIPE:  should clear the halt */
 	default:		/* error */
 		goto resubmit;
 	}
 
-resubmit:
-        pr_debug("resubmit urb\n");
+ resubmit:
+	pr_debug("resubmit urb\n");
 	status = usb_submit_urb(urb, GFP_ATOMIC);
 	if (status)
 		dev_err(&wimouse->usbdev->dev,
 			"can't resubmit intr, %s-%s/input0, status %d\n",
-			wimouse->usbdev->bus->bus_name,
-			wimouse->usbdev->devpath, status);
-	
+			wimouse->usbdev->bus->bus_name, wimouse->usbdev->devpath, status);
+
 	pr_debug("data[0]=0x%x (%d)\n", data[0], data[0]);
 	pr_debug("data[1]=0x%x (%d)\n", data[1], data[1]);
 	pr_debug("data[2]=0x%x (%d)\n", data[2], data[2]);
@@ -100,40 +101,13 @@ resubmit:
 	pr_debug("data[5]=0x%x (%d)\n", data[5], data[5]);
 	pr_debug("data[6]=0x%x (%d)\n", data[6], data[6]);
 	pr_debug("data[7]=0x%x (%d)\n", data[7], data[7]);
-		
-	// Which button was pressed?
-	input_report_key(dev, BTN_LEFT, data[1] & 0x1); // right way
+
+	// Report which buttons / rel x,y was pressed
+	input_report_key(dev, BTN_LEFT, data[1] & 0x1);	// right way
 	input_report_key(dev, BTN_RIGHT, data[1] & 0x2);
 	input_report_key(dev, BTN_MIDDLE, data[1] & 0x4);
-#if 0
-	if (data[5] == 0x1)
-		input_report_key(dev, KEY_SCROLLUP, 1);
-	if (data[5] == -1)
-		input_report_key(dev, KEY_SCROLLDOWN, 1);
-#else
 	input_report_key(dev, KEY_SCROLLUP, (data[5] == 0x1 ? 1 : 0));
 	input_report_key(dev, KEY_SCROLLDOWN, (data[5] == -1 ? 1 : 0));
-#endif
-/*
-	if (data[1] & 0x1) {
-		pr_info("Left mouse btn pressed\n");
-		input_report_key(dev, BTN_LEFT, 1);
-	} else if (data[1] & 0x2) {
-		pr_info("Right mouse btn pressed\n");
-		input_report_key(dev, BTN_RIGHT, 1);
-	} else if (data[1] & 0x4) {
-		pr_info("Middle (wheel) mouse btn pressed\n");
-		input_report_key(dev, BTN_MIDDLE, 1);
-	} else if (data[5] == 0x1) {
-		pr_info("Middle mouse btn scroll up\n");
-		input_report_key(dev, KEY_SCROLLUP, 1);  // ?
-	} else if (data[5] == -1) {
-		pr_info("Middle mouse btn scroll down\n");
-		input_report_key(dev, KEY_SCROLLDOWN, 1);  // ?
-	}
-*/
-//	input_sync(dev);
-
 	input_report_rel(dev, REL_X, data[2]);
 	input_report_rel(dev, REL_Y, data[3]);
 
@@ -141,22 +115,11 @@ resubmit:
 }
 
 /*
- There are 5 buttons on the wimouse presenter device:
-   btn         keycode
-    [ ]          15  // not specifying 'KEY_TAB' here (as it then captures 'TAB')
-                     // We instead map this to KEY_DOWN (down arrow) 
-    ^ (up)      104
-    v (dn)      109
-    +           115
-    -           114
-
- see include/uapi/linux/input-event-codes.h
-*/
 static const __u16 dev_btns_map[] = {
 	BTN_LEFT,
 	BTN_MIDDLE,
 	BTN_RIGHT,
-};
+}; */
 
 static int dev_probe(struct usb_interface *intf, const struct usb_device_id *id)
 {
@@ -168,14 +131,14 @@ static int dev_probe(struct usb_interface *intf, const struct usb_device_id *id)
 	struct input_dev *input_dev;
 	int pipe, maxp;
 	int error = -ENOMEM;
-	
-	/* A lot of the following probe code appears to be pretty identical to 
+
+	/* A lot of the following probe code appears to be pretty identical to
 	 * drivers/usb/storage/onetouch.c
 	 */
 	interface = intf->cur_altsetting;
-	
+
 	pr_info("USB interface %d now probed: (%04X:%04X)\n",
-		interface->desc.bInterfaceNumber, id->idVendor, id->idProduct);	
+		interface->desc.bInterfaceNumber, id->idVendor, id->idProduct);
 	pr_info("Number of endpoints: %02X\n", interface->desc.bNumEndpoints);
 	pr_info("Interface class: %02X\n", interface->desc.bInterfaceClass);
 
@@ -190,7 +153,7 @@ static int dev_probe(struct usb_interface *intf, const struct usb_device_id *id)
 		return -ENODEV;
 
 	pipe = usb_rcvintpipe(usbdev, endpoint->bEndpointAddress);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,19,0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0)
 	maxp = usb_maxpacket(usbdev, pipe);
 #else
 	maxp = usb_maxpacket(usbdev, pipe, usb_pipeout(pipe));
@@ -201,16 +164,10 @@ static int dev_probe(struct usb_interface *intf, const struct usb_device_id *id)
 	if (!input_dev)
 		goto fail1;
 
-	// TODO - make this back to a DMA buf & DMA xfer
-#if 0
-	wimouse->data = devm_kzalloc(dev, 8, GFP_ATOMIC); //, &wimouse->data_dma);
-	if (!wimouse->data)
-		goto fail1;
-#else
 	wimouse->data = usb_alloc_coherent(usbdev, 8, GFP_ATOMIC, &wimouse->data_dma);
 	if (!wimouse->data)
 		goto fail1;
-#endif
+
 	wimouse->irq_urb = usb_alloc_urb(0, GFP_KERNEL);
 	if (!wimouse->irq_urb)
 		goto fail2;
@@ -235,7 +192,7 @@ static int dev_probe(struct usb_interface *intf, const struct usb_device_id *id)
 
 	usb_make_path(usbdev, wimouse->phys, sizeof(wimouse->phys));
 	/* Why append '/input0'?
-	 * Because "... the event's sent out the door via /dev/input/eventX, 
+	 * Because "... the event's sent out the door via /dev/input/eventX,
 	 *  where X is the *interface number* assigned to the vms driver." (ELDD)
 	 */
 	strlcat(wimouse->phys, "/input0", sizeof(wimouse->phys));
@@ -250,14 +207,15 @@ static int dev_probe(struct usb_interface *intf, const struct usb_device_id *id)
 	 * The USB wireless mouse has x,y relative events and 3 buttons:
 	 * BTN_LEFT, BTN_MIDDLE and BTN_RIGHT
 	 * In addition, the mouse wheel can produce 3 events:
- 	 *  middle press (handled by BTN_MIDDLE), scroll up, scroll down
+	 *  middle press (handled by BTN_MIDDLE), scroll up, scroll down
 	 */
 	// Add relative ('rel') x,y events
 	set_bit(EV_REL, input_dev->evbit);
 	set_bit(REL_X, input_dev->relbit);	// rel 'x' movement
 	set_bit(REL_Y, input_dev->relbit);	// rel 'y' movement
 
-	// Add button events
+	// Add button and/or relative (rel) events
+	// see include/uapi/linux/input-event-codes.h
 	set_bit(EV_KEY, input_dev->evbit);
 	set_bit(BTN_LEFT, input_dev->keybit);
 	set_bit(BTN_MIDDLE, input_dev->keybit);
@@ -271,8 +229,7 @@ static int dev_probe(struct usb_interface *intf, const struct usb_device_id *id)
 	input_dev->close = usb_wimouse_close;
 
 	usb_fill_int_urb(wimouse->irq_urb, usbdev, pipe, wimouse->data,
-			 (maxp > 8 ? 8 : maxp),
-			 usb_wimouse_irq, wimouse, endpoint->bInterval);
+			 (maxp > 8 ? 8 : maxp), usb_wimouse_irq, wimouse, endpoint->bInterval);
 	wimouse->irq_urb->transfer_dma = wimouse->data_dma;
 	wimouse->irq_urb->transfer_flags |= URB_NO_TRANSFER_DMA_MAP;
 
@@ -285,14 +242,14 @@ static int dev_probe(struct usb_interface *intf, const struct usb_device_id *id)
 		goto fail3;
 
 	usb_set_intfdata(intf, wimouse);
-	
+
 	return 0;
 
-fail3:	
+ fail3:
 	usb_free_urb(wimouse->irq_urb);
-fail2:	
+ fail2:
 	usb_free_coherent(usbdev, 8, wimouse->data, wimouse->data_dma);
-fail1:	
+ fail1:
 	input_free_device(input_dev);
 	kfree(wimouse);
 	return error;
@@ -302,12 +259,13 @@ static void dev_disconnect(struct usb_interface *intf)
 {
 	//struct usb_device *usbdev = interface_to_usbdev(intf);
 	struct usb_wimouse *wimouse = usb_get_intfdata(intf);
-	struct input_dev *input_dev = wimouse->dev;
+	struct input_dev *input_dev;
 
 	if (wimouse) {
 		pr_info("USB disconnecting\n");
+		input_dev = wimouse->dev;
 		input_set_drvdata(input_dev, NULL);
-	//	input_unregister_device(input_dev);
+		//      input_unregister_device(input_dev);
 		usb_deregister_dev(intf, NULL);
 	}
 }
@@ -318,22 +276,22 @@ static int usb_wimouse_open(struct input_dev *dev)
 
 	pr_debug("usb wimouse open\n");
 	wimouse = input_get_drvdata(dev);
-	if(!wimouse) {
+	if (!wimouse) {
 		pr_info("no wimouse\n");
 		return -1;
 	}
-	if(!wimouse->usbdev){
+	if (!wimouse->usbdev) {
 		pr_info("no wimouse->usbdev\n");
 		return -1;
 	}
-	if(!wimouse->irq_urb){
+	if (!wimouse->irq_urb) {
 		pr_info("No wimouse->irq_urb\n");
 		return -1;
 	}
 	pr_debug("irq ok\n");
 	wimouse->irq_urb->dev = wimouse->usbdev;
 
-	if(usb_submit_urb(wimouse->irq_urb, GFP_KERNEL)) {
+	if (usb_submit_urb(wimouse->irq_urb, GFP_KERNEL)) {
 		pr_info("Failed submiting urb\n");
 		return -1;
 	}
@@ -349,7 +307,6 @@ static void usb_wimouse_close(struct input_dev *dev)
 	usb_kill_urb(wimouse->irq_urb);
 }
 
-
 // 04ca:00a8 Lite-On Technology Corp. Dell Wireless Mouse WM118
 #define USB_DELL_WIRELESS_MOUSE_VID   0x04ca
 #define USB_DELL_WIRELESS_MOUSE_PID   0x00a8
@@ -358,6 +315,7 @@ static struct usb_device_id dev_table[] = {
 	{USB_DEVICE(USB_DELL_WIRELESS_MOUSE_VID, USB_DELL_WIRELESS_MOUSE_PID)},
 	{}
 };
+
 MODULE_DEVICE_TABLE(usb, dev_table);
 static struct usb_driver wimousep_driver = {
 	.name = "mymouse_usb",
@@ -365,4 +323,5 @@ static struct usb_driver wimousep_driver = {
 	.probe = dev_probe,
 	.disconnect = dev_disconnect
 };
+
 module_usb_driver(wimousep_driver);

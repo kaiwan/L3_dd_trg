@@ -2,8 +2,12 @@
 set -euo pipefail
 
 DEFAULT_DRIVER="usbhid"
+### KEEP this UPDATED ! ################################################
+# 0d8d:1516 Promotion & Display Technology, Ltd Wireless Present   (PDL)
 MY_DRIVER="mymouse_usb"
-#MY_DRIVER="laser_usb"
+MYUSB_VID=04ca
+MYUSB_PID=00a8
+#########################################################################
 
 die()
 {
@@ -58,7 +62,33 @@ ${res}
   exit 1
 }
 
+MYUSB_VID=${MYUSB_VID^^} # to uppercase
+MYUSB_PID=${MYUSB_PID^^}
 USB_DEVICE="$1"
+
+# Auto check
+if [[ -f /sys/bus/usb/drivers/${DEFAULT_DRIVER}/${USB_DEVICE}/modalias ]] ; then
+ echo "Checking if the VID:PID is correct for the given device on the given bus"
+ # the 'modalias' looks like this (for example):
+ # usb:v0D8Dp1516d1110dc00dsc00dp00ic03isc01ip02in00
+
+ UVID=$(cut -d: -f2 /sys/bus/usb/drivers/${DEFAULT_DRIVER}/${USB_DEVICE}/modalias |cut -c2-5)
+ UPID=$(cut -d: -f2 /sys/bus/usb/drivers/${DEFAULT_DRIVER}/${USB_DEVICE}/modalias |cut -c7-10)
+ echo "(FYI: for provided bus/device VID:PID is ${UVID}:${UPID}"
+ lsusb | grep -i "${UVID}:${UPID}" || {
+   echo "No USB device match, aborting" ; exit 1
+ } && echo ")"
+ if [[ "${UVID}" = "${MYUSB_VID}" ]] && [[ "${UPID}" = "${MYUSB_PID}" ]] ; then
+   echo " match, proceeding"
+   lsusb | grep -i "${UVID}:${UPID}" || {
+     echo "No USB device match, aborting" ; exit 1
+   }
+ else
+   echo "*FATAL* no match for provided bus/device and this driver (${MY_DRIVER}), aborting"
+   exit 1
+ fi
+fi
+
 USB_DEVICE_LESS2="${1::-2}"  # rm last 2
 USB_DEVICE_FILES=/sys/bus/usb/drivers/${DEFAULT_DRIVER}/${USB_DEVICE_LESS2}*
 

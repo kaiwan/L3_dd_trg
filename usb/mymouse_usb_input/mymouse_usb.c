@@ -106,8 +106,8 @@ Seems to Require that inputX is READ by something/anything, then it works..
 	input_report_key(dev, BTN_LEFT, data[1] & 0x1);	// right way
 	input_report_key(dev, BTN_RIGHT, data[1] & 0x2);
 	input_report_key(dev, BTN_MIDDLE, data[1] & 0x4);
-	input_report_key(dev, KEY_SCROLLUP, (data[5] == 0x1 ? 1 : 0));
-	input_report_key(dev, KEY_SCROLLDOWN, (data[5] == -1 ? 1 : 0));
+	input_report_key(dev, KEY_UP, (data[5] == 0x1 ? 1 : 0));
+	input_report_key(dev, KEY_DOWN, (data[5] == -1 ? 1 : 0));
 	input_report_rel(dev, REL_X, data[2]);
 	input_report_rel(dev, REL_Y, data[3]);
 
@@ -220,8 +220,8 @@ static int dev_probe(struct usb_interface *intf, const struct usb_device_id *id)
 	set_bit(BTN_LEFT, input_dev->keybit);
 	set_bit(BTN_MIDDLE, input_dev->keybit);
 	set_bit(BTN_RIGHT, input_dev->keybit);
-	set_bit(KEY_SCROLLUP, input_dev->keybit);
-	set_bit(KEY_SCROLLDOWN, input_dev->keybit);
+	set_bit(KEY_UP, input_dev->keybit);
+	set_bit(KEY_DOWN, input_dev->keybit);
 
 	input_set_drvdata(input_dev, wimouse);
 

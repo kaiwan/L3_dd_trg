@@ -86,24 +86,20 @@ Seems to Require that inputX is READ by something/anything, then it works..
 	}
 
  resubmit:
-	pr_debug("resubmit urb\n");
+	//pr_debug("resubmit urb\n");
 	status = usb_submit_urb(urb, GFP_ATOMIC);
 	if (status)
 		dev_err(&wimouse->usbdev->dev,
 			"can't resubmit intr, %s-%s/input0, status %d\n",
 			wimouse->usbdev->bus->bus_name, wimouse->usbdev->devpath, status);
 
-	pr_debug("data[0]=0x%x (%d)\n", data[0], data[0]);
-	pr_debug("data[1]=0x%x (%d)\n", data[1], data[1]);
-	pr_debug("data[2]=0x%x (%d)\n", data[2], data[2]);
-	pr_debug("data[3]=0x%x (%d)\n", data[3], data[3]);
-	pr_debug("data[4]=0x%x (%d)\n", data[4], data[4]);
-	pr_debug("data[5]=0x%x (%d)\n", data[5], data[5]);
-	pr_debug("data[6]=0x%x (%d)\n", data[6], data[6]);
-	pr_debug("data[7]=0x%x (%d)\n", data[7], data[7]);
-
-	// Report which buttons / rel x,y was pressed
-	input_report_key(dev, BTN_LEFT, data[1] & 0x1);	// right way
+#ifdef DEBUG
+          int i;
+          for (i = 0; i < 8; i++) {
+                  if (data[i])
+                          pr_debug("data[%d]=0x%x=%d\n", i, data[i], data[i]);
+          }
+#endif
 	input_report_key(dev, BTN_RIGHT, data[1] & 0x2);
 	input_report_key(dev, BTN_MIDDLE, data[1] & 0x4);
 	input_report_key(dev, KEY_UP, (data[5] == 0x1 ? 1 : 0));

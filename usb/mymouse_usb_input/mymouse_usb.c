@@ -42,6 +42,14 @@ struct usb_wimouse {
 	dma_addr_t data_dma;
 };
 
+
+/*
+ * This is the 'response' portion of the USB URB request-response mechanism
+ * - the (in effect) IRQ handler. It runs in interrupt (atomic) context - don't
+ * sleep!
+ *
+ * Ref: https://www.kernel.org/doc/html/latest/driver-api/usb/URB.html#what-about-the-completion-handler 
+ */
 static void usb_wimouse_irq(struct urb *urb)
 {
 	struct usb_wimouse *wimouse = urb->context;
@@ -49,22 +57,18 @@ static void usb_wimouse_irq(struct urb *urb)
 	struct input_dev *dev = wimouse->dev;
 	int status;
 
-	pr_debug("urb stat=%d\n", urb->status);
+	//pr_debug("urb stat=%d\n", urb->status);
 
 /*
 TODO / RELOOK:
-ERROR:
+Sometimes get this ERROR:
 ...
 [  865.106942] mymouse_usb:usb_wimouse_irq(): urb stat=-2
 
-reset by
-
--check which is the latest /dev/input/eventN file
+Eliminate it by:
+-checking which is the latest /dev/input/eventN file
 ls -lt /dev/input
-and
-read it via evtest
-
-??
+- *read* it via evtest / whatever
 
 Seems to Require that inputX is READ by something/anything, then it works..
 (this issue has come up on SO, etc)
@@ -85,6 +89,16 @@ Seems to Require that inputX is READ by something/anything, then it works..
 		goto resubmit;
 	}
 
+	/*
+	 * Why resubmit the URB?
+	 * From official kernel doc (link is shown above):
+	 * "In Linux 2.6, unlike earlier versions, interrupt URBs are not
+	 * automagically restarted when they complete. They end when the
+	 * completion handler is called, just like other URBs. If you want an
+	 * interrupt URB to be restarted, your completion handler must resubmit it"
+	 * Also, as it's asynchoronous, the submit succeeds and the completion
+	 * handler continues to run to completion..
+	 */
  resubmit:
 	//pr_debug("resubmit urb\n");
 	status = usb_submit_urb(urb, GFP_ATOMIC);
@@ -100,22 +114,19 @@ Seems to Require that inputX is READ by something/anything, then it works..
                           pr_debug("data[%d]=0x%x=%d\n", i, data[i], data[i]);
           }
 #endif
+	// Report which buttons or relative (x,y) was pressed/moved
+	input_report_key(dev, BTN_LEFT, data[1] & 0x1);
 	input_report_key(dev, BTN_RIGHT, data[1] & 0x2);
 	input_report_key(dev, BTN_MIDDLE, data[1] & 0x4);
 	input_report_key(dev, KEY_UP, (data[5] == 0x1 ? 1 : 0));
 	input_report_key(dev, KEY_DOWN, (data[5] == -1 ? 1 : 0));
+
+	// report the delta (x,y)
 	input_report_rel(dev, REL_X, data[2]);
 	input_report_rel(dev, REL_Y, data[3]);
 
 	input_sync(dev);
 }
-
-/*
-static const __u16 dev_btns_map[] = {
-	BTN_LEFT,
-	BTN_MIDDLE,
-	BTN_RIGHT,
-}; */
 
 static int dev_probe(struct usb_interface *intf, const struct usb_device_id *id)
 {
@@ -129,7 +140,7 @@ static int dev_probe(struct usb_interface *intf, const struct usb_device_id *id)
 	int error = -ENOMEM;
 
 	/* A lot of the following probe code appears to be pretty identical to
-	 * drivers/usb/storage/onetouch.c
+	 * drivers/hid/usbhid/usbmouse.c
 	 */
 	interface = intf->cur_altsetting;
 
@@ -205,7 +216,7 @@ static int dev_probe(struct usb_interface *intf, const struct usb_device_id *id)
 	 * In addition, the mouse wheel can produce 3 events:
 	 *  middle press (handled by BTN_MIDDLE), scroll up, scroll down
 	 */
-	// Add relative ('rel') x,y events
+	// Add relative ('rel') x,y events; they're actually the delta from the prev (x,y)
 	set_bit(EV_REL, input_dev->evbit);
 	set_bit(REL_X, input_dev->relbit);	// rel 'x' movement
 	set_bit(REL_Y, input_dev->relbit);	// rel 'y' movement
@@ -224,6 +235,14 @@ static int dev_probe(struct usb_interface *intf, const struct usb_device_id *id)
 	input_dev->open = usb_wimouse_open;
 	input_dev->close = usb_wimouse_close;
 
+	/* USB request-response:
+	 * Here we setup the request by filling in the URB (receive-interrupt type).
+	 * We submit it (via usb_submit_urb()) in the input device open() method..
+	 * It's async; the completion handler - in effect the irq handler - runs
+	 * and in it we check if all's ok, processing the data, sending it up to
+	 * the input layer...
+	 * Ref: https://www.kernel.org/doc/html/latest/driver-api/usb/URB.html
+	 */
 	usb_fill_int_urb(wimouse->irq_urb, usbdev, pipe, wimouse->data,
 			 (maxp > 8 ? 8 : maxp), usb_wimouse_irq, wimouse, endpoint->bInterval);
 	wimouse->irq_urb->transfer_dma = wimouse->data_dma;
@@ -287,6 +306,7 @@ static int usb_wimouse_open(struct input_dev *dev)
 	pr_debug("irq ok\n");
 	wimouse->irq_urb->dev = wimouse->usbdev;
 
+	// URB submit 'request'; 'response' is the completion (irq) handler
 	if (usb_submit_urb(wimouse->irq_urb, GFP_KERNEL)) {
 		pr_info("Failed submiting urb\n");
 		return -1;

@@ -30,6 +30,9 @@
 # LICENSE : Dual MIT/GPL
 # VERSION : 0.2
 
+# moved this up here so one can easily set DEBUG on or off
+MYDEBUG := n
+
 #------------------------------------------------------------------
 # IMPORTANT : Set FNAME_C to the kernel module name source filename (without .c).
 # This enables you to use this Makefile as a template; just update this variable!
@@ -93,7 +96,6 @@ obj-m          += ${FNAME_C}.o
 # generation of debug symbols, if so required. Also, realize that the DEBUG
 # macro is turned on by many CONFIG_*DEBUG* options; hence, we use a different
 # macro var name, MYDEBUG).
-MYDEBUG := n
 DBG_STRIP := y
 ifeq (${MYDEBUG}, y)
 # https://www.kernel.org/doc/html/latest/kbuild/makefiles.html#compilation-flags

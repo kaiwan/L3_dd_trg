@@ -31,6 +31,24 @@ static void dev_disconnect(struct usb_interface *interface);
 static int usb_laserpdl_open(struct input_dev *dev);
 static void usb_laserpdl_close(struct input_dev *dev);
 
+// module params
+static int LASER_TOP_LEFT_BTN = KEY_PAGEUP;
+module_param(LASER_TOP_LEFT_BTN, int, 0664);
+MODULE_PARM_DESC(LASER_TOP_LEFT_BTN, "map the laser device's top left button to this key/button");
+
+static int LASER_TOP_RIGHT_BTN = KEY_PAGEDOWN;
+module_param(LASER_TOP_RIGHT_BTN, int, 0664);
+MODULE_PARM_DESC(LASER_TOP_RIGHT_BTN, "map the laser device's top right button to this key/button");
+
+static int LASER_BOTTOM_LEFT_BTN = KEY_UP;
+module_param(LASER_BOTTOM_LEFT_BTN, int, 0664);
+MODULE_PARM_DESC(LASER_BOTTOM_LEFT_BTN, "map the laser device's bottom left button to this key/button");
+
+static int LASER_BOTTOM_RIGHT_BTN = KEY_DOWN;
+module_param(LASER_BOTTOM_RIGHT_BTN, int, 0664);
+MODULE_PARM_DESC(LASER_BOTTOM_RIGHT_BTN, "map the laser device's bottom right button to this key/button");
+
+
 struct usb_laserpdl {
 	char name[128];
 	char phys[64];
@@ -112,10 +130,10 @@ Seems to Require that inputX is READ by something/anything, then it works..
 	}
 
 	// Report which buttons or relative (x,y) was pressed/moved
-	input_report_key(dev, KEY_PAGEUP, (data[3] == 0x4b));
-	input_report_key(dev, KEY_PAGEDOWN, (data[3] == 0x4e));
-	input_report_key(dev, KEY_UP, ((data[3] == 0x3e) || (data[3] == 0x29)));
-	input_report_key(dev, KEY_DOWN, (data[3] == 0x5));
+	input_report_key(dev, LASER_TOP_LEFT_BTN, (data[3] == 0x4b));
+	input_report_key(dev, LASER_TOP_RIGHT_BTN, (data[3] == 0x4e));
+	input_report_key(dev, LASER_BOTTOM_LEFT_BTN, ((data[3] == 0x3e) || (data[3] == 0x29)));
+	input_report_key(dev, LASER_BOTTOM_RIGHT_BTN, (data[3] == 0x5));
 
 	input_sync(dev);
 }
@@ -204,15 +222,22 @@ static int dev_probe(struct usb_interface *intf, const struct usb_device_id *id)
 
 	/*
 	 * The USB wireless laser presenter has 4 buttons:
-	 * left (use as PageUp), right (use as PageDn) and 2 others...
+	 * By default: we use the:
+	 *   top-left     btn as PageUp
+	 *   top-right    btn as PageDn
+	 *   bottom-left  btn as key-up
+	 *   bottom-right btn as key-dn
+	 * We support module parameters to change any/all of these mappings.
 	 */
-	// Add button events
-	// see include/uapi/linux/input-event-codes.h
+	/*
+	 * Add button events
+	 * See include/uapi/linux/input-event-codes.h
+	 */
 	set_bit(EV_KEY, input_dev->evbit);
-	set_bit(KEY_PAGEUP, input_dev->keybit);
-	set_bit(KEY_PAGEDOWN, input_dev->keybit);
-	set_bit(KEY_UP, input_dev->keybit);
-	set_bit(KEY_DOWN, input_dev->keybit);
+	set_bit(LASER_TOP_LEFT_BTN, input_dev->keybit);
+	set_bit(LASER_TOP_RIGHT_BTN, input_dev->keybit);
+	set_bit(LASER_BOTTOM_LEFT_BTN, input_dev->keybit);
+	set_bit(LASER_BOTTOM_RIGHT_BTN, input_dev->keybit);
 
 	input_set_drvdata(input_dev, laserpdl);
 

@@ -1,0 +1,125 @@
+#!/bin/bash
+# Helper to load the 'laser presenter' module along with key mappings as desired
+name=$(basename $0)
+
+KMOD=laserp
+KHDR=include/uapi/linux/input-event-codes.h
+KHDR_ABS=/lib/modules/$(uname -r)/build/${KHDR}
+
+DEFAULT_BTN_MAPPING="   Top-left button     : KEY_PAGEUP
+   Top-right button    : KEY_PAGEDOWN
+   Bottom-left button  : KEY_UP
+   Bottom-right button : KEY_DOWN
++--------------+------------+
+|  KEY_PAGEUP  |KEY_PAGEDOWN|
++--------------+------------+
+|    KEY_UP    |  KEY_DOWN  |
++--------------+------------+"
+
+die()
+{
+ echo >&2 "FATAL: $*" ; exit 1
+}
+
+usage()
+{
+ echo "Usage: ${name} [top-left-button-mapping] [top-right-button-mapping] [bottom-left-button-mapping] [bottom-right-button-mapping]
+
+This script makes mapping the laser device's four buttons to different keys/buttons possible.
+The default settings are as follows:
+
+${DEFAULT_BTN_MAPPING}
+
+All possible button/key mappings are present in this header:
+ ${KHDR}
+(abs path: /lib/modules/$(uname -r)/build/${KHDR} )
+
+You can map as many buttons as you wish to...
+Please lookup and pass them in the precise order shown above.
+
+NOTE! pl just pass the symbolic name; this helper will map it to the numeric value.
+
+Examples:
+
+./run KEY_HOME KEY_END KEY_VOLUMEDOWN KEY_VOLUMEUP
+
+will map the laser device's:
+  top-left    button to KEY_HOME,       top-right    button to END, and the
+  bottom-left button to KEY_VOLUMEDOWN, bottom-right button to KEY_VOLUMEUP
+
++--------------+------------+
+|   KEY_HOME   |  KEY_END   |
++--------------+------------+
+|KEY_VOLUMEDOWN|KEY_VOLUMEUP|
++--------------+------------+"
+}
+
+isanumber()
+{
+if [[ "$1" =~ ^-?[0-9]+$ ]]; then
+#    echo "$1 is an integer"
+    return
+elif [[ "$1" =~ ^0[xX][0-9a-fA-F]+$ ]]; then
+#    echo "$1 is a hexadecimal number"
+    return
+else
+    echo "$1 is neither an integer nor a hexadecimal number" ; exit 1
+fi
+}
+
+
+#--- 'main'
+[[ ! -f ${KHDR_ABS} ]] && {
+  echo "${name}: the kernel header's package isn't installed?
+(can't locate ${KHDR} from /lib/modules/$(uname -r)/build/)
+Please install the kernel headers package OR modify the script to have the var KHDR_ABS
+point to the correct kernel src tree location and retry). Aborting..."
+  exit 1
+}
+if [[ $# -ge 1 ]] && [[ "$1" = "-h" ]] ; then
+  usage ; exit 0
+fi
+
+if [[ $# -eq 0 ]] ; then
+  echo "Using default settings:
+${DEFAULT_BTN_MAPPING}"
+else
+  echo "Attempting to use the key/button mapping(s) passed:"
+  echo
+  [[ $# -ge 1 ]] && {
+     LASER_TOP_LEFT_BTN=$(grep -w "$1" ${KHDR_ABS} | awk '{print $3}')
+     [[ -z "${LASER_TOP_LEFT_BTN}" ]] && die "Mapping \"$1\" for top-left button not found, aborting..."
+     isanumber ${LASER_TOP_LEFT_BTN}
+     printf "Laser top-left button will map to  %-20s = %5d    [OK]\n" $1 ${LASER_TOP_LEFT_BTN}
+     KMOD_PARAMS="LASER_TOP_LEFT_BTN=${LASER_TOP_LEFT_BTN}"
+  }
+  [[ $# -ge 2 ]] && {
+     LASER_TOP_RIGHT_BTN=$(grep -w "$2" ${KHDR_ABS} | awk '{print $3}')
+     [[ -z "${LASER_TOP_RIGHT_BTN}" ]] && die "Mapping \"$2\" for top-right button not found, aborting..."
+     isanumber ${LASER_TOP_RIGHT_BTN}
+     printf "Laser top-right button will map to %-20s = %5d    [OK]\n" $2 ${LASER_TOP_RIGHT_BTN}
+     KMOD_PARAMS="${KMOD_PARAMS} LASER_TOP_RIGHT_BTN=${LASER_TOP_RIGHT_BTN}"
+  }
+  [[ $# -ge 3 ]] && {
+     LASER_BOTTOM_LEFT_BTN=$(grep -w "$3" ${KHDR_ABS} | awk '{print $3}')
+     [[ -z "${LASER_BOTTOM_LEFT_BTN}" ]] && die "Mapping \"$3\" for bottom-left button not found, aborting..."
+     isanumber ${LASER_BOTTOM_LEFT_BTN}
+     printf "Laser bottom-left button will map to %-20s = %5d    [OK]\n" $3 ${LASER_BOTTOM_LEFT_BTN}
+     KMOD_PARAMS="${KMOD_PARAMS} LASER_BOTTOM_LEFT_BTN=${LASER_BOTTOM_LEFT_BTN}"
+  }
+  [[ $# -ge 4 ]] && {
+     LASER_BOTTOM_RIGHT_BTN=$(grep -w "$4" ${KHDR_ABS} | awk '{print $3}')
+     [[ -z "${LASER_BOTTOM_RIGHT_BTN}" ]] && die "Mapping \"$4\" for bottom-right button not found, aborting..."
+     isanumber ${LASER_BOTTOM_RIGHT_BTN}
+     printf "Laser bottom-right button will map to %-20s = %5d    [OK]\n" $4 ${LASER_BOTTOM_RIGHT_BTN}
+     KMOD_PARAMS="${KMOD_PARAMS} LASER_BOTTOM_RIGHT_BTN=${LASER_BOTTOM_RIGHT_BTN}"
+  }
+fi
+
+echo
+#echo "KMOD_PARAMS : ${KMOD_PARAMS}"
+
+sudo rmmod ${KMOD} 2>/dev/null
+echo "Loading driver:
+sudo insmod ${KMOD}.ko ${KMOD_PARAMS}"
+sudo insmod ${KMOD}.ko ${KMOD_PARAMS} || exit 1 && exit 0

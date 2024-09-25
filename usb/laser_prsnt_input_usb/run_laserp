@@ -121,5 +121,8 @@ echo
 
 sudo rmmod ${KMOD} 2>/dev/null
 echo "Loading driver:
-sudo insmod ${KMOD}.ko ${KMOD_PARAMS}"
-sudo insmod ${KMOD}.ko ${KMOD_PARAMS} || exit 1 && exit 0
+sudo modprobe ${KMOD} ${KMOD_PARAMS}"
+sudo modprobe ${KMOD} ${KMOD_PARAMS} || exit 1
+echo "Running 'rebind' now..."
+# UPDATE as reqd
+/home/kaiwan/gitL3/usb/laser_prsnt_input_usb/rebind

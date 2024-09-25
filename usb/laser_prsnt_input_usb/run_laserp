@@ -120,9 +120,21 @@ echo
 #echo "KMOD_PARAMS : ${KMOD_PARAMS}"
 
 sudo rmmod ${KMOD} 2>/dev/null
-echo "Loading driver:
-sudo modprobe ${KMOD} ${KMOD_PARAMS}"
-sudo modprobe ${KMOD} ${KMOD_PARAMS} || exit 1
-echo "Running 'rebind' now..."
-# UPDATE as reqd
-/home/kaiwan/gitL3/usb/laser_prsnt_input_usb/rebind
+echo "Loading driver..."
+
+# UPDATE path as reqd
+MY_DRIVER=laserp
+MY_DRIVER_LOC=/home/kaiwan/gitL3/usb/laser_prsnt_input_usb
+NOT_INSTALLED=0
+
+lsmod|grep ${MY_DRIVER} >/dev/null || {
+  # Verify it's installed, else install it
+  ls /lib/modules/$(uname -r)/updates/${MY_DRIVER}.ko* >/dev/null 2>&1 || {
+     NOT_INSTALLED=1
+     ls /lib/modules/$(uname -r)/extra/${MY_DRIVER}.ko* >/dev/null 2>&1 && NOT_INSTALLED=0
+  }
+  [[ ${NOT_INSTALLED} -eq 1 ]] && (cd ${MY_DRIVER_LOC} ; sudo make install)
+  sudo modprobe ${MY_DRIVER} ${KMOD_PARAMS} || die "modprobe ${MY_DRIVER} failed? Insert your \"${MY_DRIVER}\" driver first and retry"
+}
+echo "Running the 'rebind' script ..."
+${MY_DRIVER_LOC}/rebind

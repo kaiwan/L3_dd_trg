@@ -1,4 +1,8 @@
 #!/bin/bash
+# We expect that the default driver for USB HID devices - usbhid - will take
+# over our device.. Here, we want to drive our device via our driver.
+# Hence, we identify it's USB bus address (by scanning for the given VID:PID)
+# and then unbind that addr from usbhid and then bind it to our driver.
 set -euo pipefail
 
 name=$(basename $0)
@@ -6,6 +10,7 @@ DEFAULT_DRIVER="usbhid"
 ### KEEP this UPDATED ! ################################################
 # 0d8d:1516 Promotion & Display Technology, Ltd Wireless Present   (PDL)
 MY_DRIVER="laserp"
+MY_DRIVER_LOC=/home/kaiwan/gitL3/usb/laser_prsnt_input_usb
 MYUSB_VID=0D8D
 MYUSB_PID=1516
 #########################################################################
@@ -76,9 +81,7 @@ if [[ -f /sys/bus/usb/drivers/${DEFAULT_DRIVER}/${USB_DEVICE}/modalias ]] ; then
    }
    unbind ${USB_DEVICE} || return 1
    sleep .1
-   bind ${USB_DEVICE} && {
-     echo "${name}: done, device drive by ${MY_DRIVER} is now ready to use!" ; return 0
-   } || return 1
+   bind ${USB_DEVICE} || return 1
  fi
 fi
 }
@@ -87,7 +90,13 @@ fi
 #--- 'main'
 
 lsmod|grep ${MY_DRIVER} >/dev/null || {
-  sudo modprobe ${MY_DRIVER} || die "modprobe ${MY_DRIVER} failed? Insert your \"${MY_DRIVER}\" driver first and retry"
+  # Verify it's installed, else install it
+  ls /lib/modules/$(uname -r)/updates/${MY_DRIVER}.ko* >/dev/null 2>&1 || {
+     NOT_INSTALLED=1
+     ls /lib/modules/$(uname -r)/extra/${MY_DRIVER}.ko* >/dev/null 2>&1 && NOT_INSTALLED=0
+  }
+  [[ ${NOT_INSTALLED} -eq 1 ]] && (cd ${MY_DRIVER_LOC} ; sudo make install)
+  sudo modprobe ${MY_DRIVER} ${KMOD_PARAMS} || die "modprobe ${MY_DRIVER} failed? Insert your \"${MY_DRIVER}\" driver first and retry"
 }
 
 [[ 0 -eq 1 ]] && {
@@ -111,7 +120,7 @@ res=$(ls -1d /sys/bus/usb/drivers/${DEFAULT_DRIVER}/[0-9]* 2>/dev/null) || true
 [[ -z "${res}" ]] && die "Currently there aren't any (under /sys/bus/usb/drivers/${DEFAULT_DRIVER})"
 
 FOUND=0
-echo "=== Now checking all USB devices on the ${DEFAULT_DRIVER} USB bus"
+echo "=== Now checking all USB devices on the \"${DEFAULT_DRIVER}\" USB bus"
 for usbbus in ${res}
 do
   USB_BUS=$(basename ${usbbus})
@@ -121,7 +130,10 @@ do
 done
 
 [[ ${FOUND} -eq 0 ]] && {
-  echo "${name}: USB device for driver \"${MY_DRIVER}\" not present? aborting..."
+  echo "*** ${name}: USB device for driver \"${MY_DRIVER}\" not present/inserted? aborting... ***
+(If it's there, try unplugging, then re-inserting the USB device and then retry)"
   exit 1
+} || {
+  echo ">>> ${name}: done, device driven by \"${MY_DRIVER}\" is now ready to use! <<<"
+  exit 0
 }
-exit 0

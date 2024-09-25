@@ -51,7 +51,7 @@ static void whee(struct timer_list *tmr)
 	PRINT_CTX();
 //	QPDS;
 
-#if 1
+#if 0
 	schedule();   // BUG! trigger an Oops!
 #endif
 	/* Reset and activate the timer */

@@ -258,7 +258,7 @@ static int vnet_probe(struct platform_device *pdev)
 #endif
 
 	ether_setup(ndev);
-	strlcpy(ndev->name, INTF_NAME, strlen(INTF_NAME) + 1);
+	strscpy(ndev->name, INTF_NAME, strlen(INTF_NAME) + 1);
 	memcpy(ndev->dev_addr, veth_MAC_addr, sizeof(veth_MAC_addr));
 
 #if 0

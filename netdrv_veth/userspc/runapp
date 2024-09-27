@@ -14,6 +14,11 @@ getIP()
 #--- 'main'
 INTF=veth
 
+which ifconfig >/dev/null 2>&1 || {
+  echo "ifconfig not installed? Pl install & retry"
+  exit 1
+}
+
 # Look for the first ethernet intf to come up this boot (we'll want it's IP addr)
 # It's often 'renamed', look for that and extract the intf name
 s1=$(journalctl -b --no-pager |grep "renamed from "|head -n1)

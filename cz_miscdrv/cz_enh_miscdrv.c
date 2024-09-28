@@ -102,15 +102,15 @@ static ssize_t czero_read(struct file *filp, char __user *buf,
 	/* lets fill it with 'deadface' ! */
 	for (i = 0; i < mcount / 4; i++) {
 #ifndef __BIG_ENDIAN	 // little-endian
-		zbuf[(i * 4) + 0] = 0xce;
-		zbuf[(i * 4) + 1] = 0xfa;
-		zbuf[(i * 4) + 2] = 0xad;
-		zbuf[(i * 4) + 3] = 0xde;
-#else	 // big-endian
 		zbuf[(i * 4) + 0] = 0xde;
 		zbuf[(i * 4) + 1] = 0xad;
 		zbuf[(i * 4) + 2] = 0xfa;
 		zbuf[(i * 4) + 3] = 0xce;
+#else	 // big-endian
+		zbuf[(i * 4) + 0] = 0xce;
+		zbuf[(i * 4) + 1] = 0xfa;
+		zbuf[(i * 4) + 2] = 0xad;
+		zbuf[(i * 4) + 3] = 0xde;
 #endif
 	}
 	print_hex_dump_bytes(" ", DUMP_PREFIX_OFFSET, zbuf, mcount / 4);

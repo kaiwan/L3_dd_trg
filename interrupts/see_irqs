@@ -12,9 +12,15 @@ is_gui_supported()
 }
 
 #--- main
-GUI_MODE=$(is_gui_supported)
 
-[[ $# -eq 1 ]] && [[ "$1" = "-c" ]] && GUI_MODE=0  # -c: console mode
+GUI_MODE=$(is_gui_supported)
+echo "Detected GUI mode as ${GUI_MODE}"
+[[ ${GUI_MODE} -eq 1 ]] && echo "(FYI, if you'd like to run in console mode, rerun passing '-c' to this script)"
+
+[[ $# -eq 1 ]] && [[ "$1" = "-c" ]] && {
+   echo "-c passed, forcing console mode..."
+   GUI_MODE=0  # -c: console mode
+}
 
 PROMPT="[Enter] to continue and then ^C to abort..."
 title1="Watch : /proc/interrupts : every 1s"

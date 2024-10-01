@@ -169,10 +169,16 @@ static int __init platdev_init(void)
 		pr_warn("platform_driver_register failed!\n");
 		goto out_fail_pdr;
 	}
-	/* Successful platform_driver_register() will cause the platform bus to,
+	/*
+	 * Successful platform_driver_register() will cause the platform bus to,
 	 * as it runs its 'match dev-to-drv' loop, match this platform driver to
 	 * the specified (pseudo) platform device! And thus have the registered
 	 * 'probe' method to be invoked now..
+	 *
+	 * $ cat /sys/devices/platform/splat.0/driver_override 
+	 * platdemo
+	 * $ cat /sys/devices/platform/splat.0/modalias        
+	 * platform:splat
 	 */
 	dev_dbg(&plat0.dev, "loaded.\n");
 	return res;

@@ -22,6 +22,7 @@
 #include <linux/slab.h>
 #include <linux/device.h>
 #include <linux/platform_device.h>
+#include <linux/version.h>
 #include "../../convenient.h"
 
 MODULE_DESCRIPTION
@@ -32,7 +33,11 @@ MODULE_LICENSE("Dual MIT/GPL");
 #define DRVNAME  "platdemo"
 /*------------------------ Structs, prototypes, .. ------------------*/
 static int platdev_probe(struct platform_device *);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 11, 0)
 static int platdev_remove(struct platform_device *);
+#else
+static void platdev_remove(struct platform_device *);
+#endif
 static void plat0_release(struct device *);
 
 /* Platform Device */
@@ -70,7 +75,11 @@ static struct platform_device *platdemo_platform_devices[] __initdata = {
 /* Platform Driver */
 static struct platform_driver platdrv = {
 	.probe = platdev_probe,
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 11, 0)
 	.remove = platdev_remove,
+#else
+	.remove_new = platdev_remove,
+#endif
 	.driver = {
 		   .name = DRVNAME,	/* IMP: matches platform device name, and
 					 * thus the probe method gets invoked
@@ -109,13 +118,19 @@ setting data_xform to 100\n");
 	return 0;
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 11, 0)
 static int platdev_remove(struct platform_device *pdev)
+#else
+static void platdev_remove(struct platform_device *pdev)
+#endif
 {
 	struct device *dev = &pdev->dev;
 	struct stMyCtx *pstCtx = dev_get_platdata(dev);
 
 	dev_dbg(dev, "remove method invoked\n data_xform=%d\n", pstCtx->data_xform);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 11, 0)
 	return 0;
+#endif
 }
 
 static void plat0_release(struct device *dev)

@@ -25,7 +25,7 @@
 #include "../../convenient.h"
 
 MODULE_DESCRIPTION
-("Simple demo platform driver; can use as a template for a platform device/driver");
+    ("Simple demo platform driver; can use as a template for a platform device/driver");
 MODULE_AUTHOR("Kaiwan N Billimoria");
 MODULE_LICENSE("Dual MIT/GPL");
 
@@ -37,12 +37,12 @@ static void plat0_release(struct device *);
 
 /* Platform Device */
 static struct platform_device plat0 = {
-#if 1	/* Make 1 to test using different names in the platform device and driver;
-	 * We find that the driver core then can't bind them, and the probe method
-	 * is never invoked...
-	 */
-	.name = "plat",
-	/* But then again, we can use the 'driver_override' member to force
+#if 1				/* Make 1 to test using different names in the platform device and driver;
+				 * We find that the driver core then can't bind them, and the probe method
+				 * is never invoked...
+				 */
+	.name = "splat",	// oops, bad name...!
+	/* ... But then again, we can use the 'driver_override' member to force
 	 * a match to the driver's name! Then it still works..
 	 */
 	.driver_override = DRVNAME,	/* Driver name to force a match! */
@@ -57,10 +57,10 @@ static struct platform_device plat0 = {
 		 *   IOports/DMA channels/clocks/etc + optionally 'data'
 		 *   (typically a private structure).
 		 *   The new way - on platforms that support it - is of course
-		 *   to use the Device Tree (ARM/PPC) / ACPI tables (x86)
+		 *   to use the Device Tree (ARM* / PPC) / ACPI tables (x86)
 		 */
 		.release = plat0_release,
-	},
+		},
 };
 
 static struct platform_device *platdemo_platform_devices[] __initdata = {
@@ -72,18 +72,24 @@ static struct platform_driver platdrv = {
 	.probe = platdev_probe,
 	.remove = platdev_remove,
 	.driver = {
-	   .name = DRVNAME,	// matches platform device name
-	   .owner = THIS_MODULE,
-	},
+		   .name = DRVNAME,	/* IMP: matches platform device name, and
+					 * thus the probe method gets invoked
+					 */
+		   /*.name = DRVNAME"xyz", *//* this will obviously *not* match,
+		    * thus the probe method never gets invoked
+		    */
+		   .owner = THIS_MODULE,
+		   },
 };
 
 /* Most drivers have a global "context" struct that gets passed around .. */
 struct stMyCtx {
-	//struct net_device *netdev;
+	//struct net_device *netdev; // or whichever appropriate 'specialized' by-type structure
 	int txpktnum, rxpktnum;
 	int tx_bytes, rx_bytes;
 	unsigned int data_xform;
 	//spinlock_t lock;
+	//mutex mutex;
 };
 
 /*--------------------------------------------------------------------*/
@@ -98,7 +104,8 @@ static int platdev_probe(struct platform_device *pdev)
 	 */
 
 	pstCtx->data_xform = 100;
-	dev_dbg(dev, "probe method invoked; set data_xform to 100\n");
+	dev_dbg(dev, "platform drv probe method invoked! implies name match\n\
+setting data_xform to 100\n");
 	return 0;
 }
 
@@ -107,8 +114,7 @@ static int platdev_remove(struct platform_device *pdev)
 	struct device *dev = &pdev->dev;
 	struct stMyCtx *pstCtx = dev_get_platdata(dev);
 
-	dev_dbg(dev, "remove method invoked\n data_xform=%d\n",
-	    pstCtx->data_xform);
+	dev_dbg(dev, "remove method invoked\n data_xform=%d\n", pstCtx->data_xform);
 	return 0;
 }
 
@@ -130,11 +136,13 @@ static int __init platdev_init(void)
 	plat0.dev.platform_data = pstCtx;	// convenient to access later
 
 	/* Here, we're simply 'manually' adding a platform device (old-style)
-	 * the platform_add_devices() API, which is a wrapper over platform_device_register().
-	 * (The preferred modern way is to do so via the DT).
+	 * via the platform_add_devices() API, which is a wrapper over
+	 * platform_device_register().
+	 * (The preferred modern way is to do so via the DT; here, the DT devices
+	 * are generated as platform devices by the kernel at early boot)
 	 */
 	res = platform_add_devices(platdemo_platform_devices,
-				  ARRAY_SIZE(platdemo_platform_devices));
+				   ARRAY_SIZE(platdemo_platform_devices));
 	if (res) {
 		pr_warn("platform_add_devices failed!\n");
 		goto out_fail_pad;
@@ -146,8 +154,10 @@ static int __init platdev_init(void)
 		pr_warn("platform_driver_register failed!\n");
 		goto out_fail_pdr;
 	}
-	/* Successful platform_driver_register() will cause the registered 'probe'
-	 * method to be invoked now..
+	/* Successful platform_driver_register() will cause the platform bus to,
+	 * as it runs its 'match dev-to-drv' loop, match this platform driver to
+	 * the specified (pseudo) platform device! And thus have the registered
+	 * 'probe' method to be invoked now..
 	 */
 	dev_dbg(&plat0.dev, "loaded.\n");
 	return res;

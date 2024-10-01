@@ -16,6 +16,11 @@ waiting()
   printf "\r"
 }
 
+hash argdist-bpfcc 2>/dev/null || {
+  echo "argdist-bpfcc missing; pl install the bpfcc-tools package and retry"
+  exit 1
+}
+
 NUMSEC=10
 LAST_TIMESTAMP=""
 echo "${name}: pl wait as data's gathered... (${NUMSEC}s)"

@@ -1,10 +1,35 @@
 #!/bin/bash
 # Leverage the 'watch' program to keep an eye on hardirqs and softirqs !
 
+is_gui_supported()
+{
+ local GUI_MODE=0
+ xdpyinfo >/dev/null 2>&1 && GUI_MODE=1
+ # On Fedora (26), xdpyinfo fails when run as root; so lets do another check as well
+ ps -e|egrep -w "X|Xorg|Xwayland" >/dev/null 2>&1 && GUI_MODE=1 || GUI_MODE=0
+ #echo "GUI_MODE $GUI_MODE"
+ echo ${GUI_MODE}
+}
+
+#--- main
+GUI_MODE=$(is_gui_supported)
+echo "GUI_MODE=${GUI_MODE}"
+
 title1="Watch : /proc/interrupts : every 1s"
 cmd1="watch -n1 -d \"cat /proc/interrupts\""
-lxterminal --working-directory=${HOME}/ --command="${cmd1}" --title="${title1}" --geometry=1600x750 &
+if [[ ${GUI_MODE} -eq 1 ]] ; then
+   lxterminal --working-directory=${HOME}/ --command="${cmd1}" --title="${title1}" --geometry=1600x750 &
+else
+  read -p ">>> ${title1}"
+  eval "${cmd1}"
+fi
 
 title2="Watch : /proc/softirqs : every 1s"
 cmd2="watch -n1 -d \"cat /proc/softirqs\""
-lxterminal --working-directory=${HOME}/ --command="${cmd2}" --title="${title2}" --geometry=1200x350 &
+if [[ ${GUI_MODE} -eq 1 ]] ; then
+   lxterminal --working-directory=${HOME}/ --command="${cmd2}" --title="${title2}" --geometry=1200x350 &
+else
+  read -p ">>> ${title2}"
+  eval "${cmd2}"
+fi
+exit 0

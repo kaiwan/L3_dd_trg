@@ -12,16 +12,14 @@
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/irq_work.h>
-#include "../convenient.h"
-
-#define OURMODNAME    "irq_work"
+#include "../../convenient.h"
 
 /* Module parameters */
 static int sleep_in_intrctx;
 module_param(sleep_in_intrctx, int, 0660);
 MODULE_PARM_DESC(sleep_in_intrctx,
-"Parameter to control whether to (stupidly) attempt sleeping in interrupt context! [default=0]; \n"
-"pass 1 to attempt to and thus create a Bug!");
+		 "Parameter to control whether to (stupidly) attempt sleeping in interrupt context! [default=0]; \n"
+		 "pass 1 to attempt to and thus create a Bug!");
 
 MODULE_AUTHOR("Kaiwan NB, kaiwanTECH");
 MODULE_DESCRIPTION("A simple demo of running in interrupt context via the irq_work");
@@ -57,7 +55,7 @@ static int __init intr_drv_init(void)
 
 #define NUM_TIMES_TRIGGER 1
 	for (i = 0; i < NUM_TIMES_TRIGGER; i++) {
-		pr_info("trigger interrupt work, instance #%02d\n", i);
+		pr_info("trigger interrupt work, instance %d of %d\n", i, NUM_TIMES_TRIGGER);
 		/* Enqueue &irqwork on the current cpu */
 		irq_work_queue(&irqwork);
 	}

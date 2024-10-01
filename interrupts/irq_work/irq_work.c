@@ -18,8 +18,8 @@
 static int sleep_in_intrctx;
 module_param(sleep_in_intrctx, int, 0660);
 MODULE_PARM_DESC(sleep_in_intrctx,
-		 "Parameter to control whether to (stupidly) attempt sleeping in interrupt context! [default=0]; \n"
-		 "pass 1 to attempt to and thus create a Bug!");
+"Parameter to control whether to (stupidly) attempt sleeping in interrupt context! [default=0]; \n"
+"pass 1 to attempt to and thus create a Bug!");
 
 MODULE_AUTHOR("Kaiwan NB, kaiwanTECH");
 MODULE_DESCRIPTION("A simple demo of running in interrupt context via the irq_work");

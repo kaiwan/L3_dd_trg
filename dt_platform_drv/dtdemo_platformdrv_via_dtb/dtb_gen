@@ -100,9 +100,17 @@ ls -l /proc/device-tree/soc/dtdemo_chip/
 You should see our 'dtdemo_chip' under the 'soc'
 If so, run the driver: the probe method will get invoked...
 
-NOTE: just in case the board doesn't boot (via the new DTB), it's very likely
-its because of an error in the DTS... so edit the ${RPI_CONFIG} file on your PC,
-commenting out the last 'device_tree=...' line and then retry
+TIP: as an additional help, we shall now 'install' the driver; this way, it
+gets *auto-loaded* at boot when the DTB contains the 'dtdemo_chip' entry (as
+the platform bus driver matches the driver to the device and loads it up!
 @EOF@
+
+echo
+sudo make install || echo "install failed"
+
+echo "
+*NOTE* Just in case the board doesn't boot (via the new DTB), it's very likely
+its because of an error in the DTS... so edit the ${RPI_CONFIG} file on your PC,
+commenting out the last 'device_tree=...' line and then retry"
 
 exit 0

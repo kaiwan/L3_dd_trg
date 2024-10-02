@@ -6,20 +6,41 @@
  * be retrieved and displayed in the platform driver!
  * Tested by modifying the DT of the Raspberry Pi 3B+ (or whichever).
  *
- * Sample DT node in the dts for our fake platform device:
+ * For the Raspberry Pi boards, a sample DT node in the dts for our fake
+ * platform device:
  * (The node name doesn't matter; it's the *compatible* property that matches
  *  with the same in this driver!):
  *
+ * F.e. for the Raspberry Pi 4B:
+ * in rpi4b_dtb_stuff/rpi4b_gen.dts :
  * ...
  * soc {
  * ...
  *        dtdemo_chip {
  *                compatible = "dtdemo,dtdemo_platdev";
- *                aproperty = "my new prop";
+ *                aproperty = "my prop 1";
  *                reg = <0x1 0x2>;
  *                status = "okay";
  *        };
  * ...
+ *
+ * Working:
+ * - Convert the existing DTB to DTS:
+ *
+ * - compile the DTS into a DTB - a device tree blob binary
+ *   (or, easier, generate a DT overlay 'fragment' (a .dtbo) and specify it at
+ *    boot (via the /boot/config.txt))
+ * - boot via this DTB (or DT overlay .dtbo)
+ * - the kernel 'unrolls'/parses the DTB/DTBO at boot via it's OF APIs:
+ *    - it thus 'sees' the new dtdemo_chip (pseudo) device
+ *    - it constructs it as a platform device
+ *    - the platform bus driver is running it's 'match loop' looking to match
+ *      a platform device to it's driver via the 'compatible' property
+ * - this driver loads up, registering itse;f as a platform driver, with the
+ *   *same* 'compatible' string
+ * - this causes a ,atch! and voila, the bus driver invokes the driver's probe
+ *   routine, and we're on the way to driving it!
+ *
  * Kaiwan N Billimoria, kaiwanTECH
  * License: Dual MIT/GPL
  */
@@ -39,14 +60,14 @@
 
 #include <linux/miscdevice.h>
 #include <linux/delay.h>
-#include <linux/of.h>   // of_* APIs (Open Firmware!)
+#include <linux/of.h>   // of_* APIs (OF = Open Firmware!)
 
 #define DRVNAME "dtdemo_platdrv"
 
 MODULE_LICENSE("Dual MIT/GPL");
 MODULE_AUTHOR("Kaiwan N Billimoria");
 MODULE_DESCRIPTION(
-"Demo: setting up a DT node, so that this platform drv can get bound");
+"Demo: setting up a DT node, so that this demo platform driver can get bound");
 
 int dtdemo_platdev_probe(struct platform_device *pdev)
 {

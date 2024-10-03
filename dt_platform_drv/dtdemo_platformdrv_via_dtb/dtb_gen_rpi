@@ -1,0 +1,116 @@
+#!/bin/bash
+# For the Raspberry Pi 4B; run it on the target
+
+die()
+{
+echo >&2 "FATAL: $*" ; exit 1
+}
+
+MODEL="Raspberry Pi 4B"
+PROMPT="Press [Enter] to continue, ^C to abort ..."
+OUT_ORIG_DTS=rpi4b_dtb_stuff/rpi4b_gen_orig.dts
+
+cat << @EOF@
+  *** NOTE NOTE NOTE ***
+
+This DTS / DTB demo script works ONLY for the
+     ${MODEL}
+board. If ok, go ahead and run it, else abort now...
+(You can tweak the script quite easily for another R Pi board)
+
+${PROMPT}
+@EOF@
+read
+
+echo -n "> Generating the Original ${MODEL} DTS now:"
+dtc -I fs -@ -O dts /proc/device-tree/ > ${OUT_ORIG_DTS} 2>/dev/null
+ # -I, --in-format <arg>
+ # -@ : Enable generation of symbols
+ # -O, --out-format <arg>
+[[ $? -ne 0 ]] && die " *failed*"
+echo " success"
+ls -l ${OUT_ORIG_DTS}
+
+OUT_NEW_DTS=rpi4b_dtb_stuff/rpi4b_gen_dtdemo.dts
+
+MYNODE="/* Our demo pseudo h/w chip */
+                dtdemo_chip {
+                        compatible = \"dtdemo,dtdemo_platdev\";
+                        aproperty = \"my prop 1\";
+                        status = \"okay\";
+                };"
+
+[[ ! -f ${OUT_NEW_DTS} ]] && die "Whoops, the new DTS file isn't found, aborting..."
+
+cat << @EOF@
+
+Okay, we've (earlier) made a copy of the (above) original ${MODEL} DTS file,
+naming it ${OUT_NEW_DTS}
+
+And have added this para to it:
+(under end of the soc { ... after
+                         mailbox@7e00b840 { ... )
+
+	        ${MYNODE}
+
+So now we'll assume that this is the 'new' DTS file with the dtdemo_chip node within it:
+  ${OUT_NEW_DTS}
+
+We'll now generate the DTB from it...
+
+${PROMPT}
+@EOF@
+read
+
+# validity check
+echo "> Performing validity check.."
+grep "compatible = .*dtdemo,dtdemo_platdev" ${OUT_NEW_DTS} || die "failed"
+echo "OK"
+
+#sed '/mailbox@7e00b840 {/a ${MYNODE}' ${OUT_NEW_DTS}
+
+OUT_NEW_DTB=rpi4b_dtb_stuff/rpi4b_gen_dtdemo.dtb
+echo "> Generating the new DTB file - ${OUT_NEW_DTB} - now..."
+echo -n "New DTB :"
+dtc ${OUT_NEW_DTS} -O dtb -o ${OUT_NEW_DTB} 2>/dev/null
+[[ $? -ne 0 ]] && die " *failed*"
+echo " success"
+ls -l ${OUT_NEW_DTB}
+
+echo "> Copying the new DTB image to /boot"
+sudo cp ${OUT_NEW_DTB} /boot
+
+# Check for and if reqd append the device_tree=... line to the config file
+echo
+RPI_CONFIG=/boot/firmware/config.txt   # newer
+[[ ! -f ${RPI_CONFIG} ]] && RPI_CONFIG=/boot/config.txt
+DTB_FILE=$(basename ${OUT_NEW_DTB})
+grep "^device_tree=${DTB_FILE}" ${RPI_CONFIG}
+[[ $? -ne 0 ]] && {
+   echo "> Now appending our custom device_tree= specifier into ${RPI_CONFIG}"
+   APPEND_CONTENT="\n# kaiwanTECH L3_dd_trg: dtdemo_platformdrv_via_dtb\n# Demo DTB; contains the new pseudo device dtdemo_chip...\ndevice_tree=${DTB_FILE}"
+   sudo sed -i -e '$a\'$'\n'"${APPEND_CONTENT}" ${RPI_CONFIG}
+   grep "^device_tree=${DTB_FILE}" ${RPI_CONFIG} >/dev/null || die "failed to append it"
+} || echo "OK, our custom device_tree= specifier is already embedded in ${RPI_CONFIG}"
+
+cat << @EOF@
+Done! reboot and check that it's worked by doing:
+ls -l /proc/device-tree/soc/dtdemo_chip/
+
+You should see our 'dtdemo_chip' under the 'soc'
+If so, run the driver: the probe method will get invoked...
+
+TIP: as an additional help, we shall now 'install' the driver; this way, it
+gets *auto-loaded* at boot when the DTB contains the 'dtdemo_chip' entry (as
+the platform bus driver matches the driver to the device and loads it up!
+@EOF@
+
+echo
+sudo make install || echo "install failed"
+
+echo "
+*NOTE* Just in case the board doesn't boot (via the new DTB), it's very likely
+its because of an error in the DTS... so edit the ${RPI_CONFIG} file on your PC,
+commenting out the last 'device_tree=...' line and then retry"
+
+exit 0

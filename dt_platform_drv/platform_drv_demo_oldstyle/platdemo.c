@@ -42,10 +42,10 @@ static void plat0_release(struct device *);
 
 /* Platform Device */
 static struct platform_device plat0 = {
-#if 1				/* Make 1 to test using different names in the platform device and driver;
-				 * We find that the driver core then can't bind them, and the probe method
-				 * is never invoked...
-				 */
+#if 1		/* Make 1 to test using different names in the platform device and driver;
+		 * We find that the driver core then can't bind them, and the probe method
+		 * is never invoked...
+		 */
 	.name = "splat",	// oops, bad name...!
 	/* ... But then again, we can use the 'driver_override' member to force
 	 * a match to the driver's name! Then it still works..
@@ -75,6 +75,7 @@ static struct platform_device *platdemo_platform_devices[] __initdata = {
 /* Platform Driver */
 static struct platform_driver platdrv = {
 	.probe = platdev_probe,
+// From 6.11, use the remove_new hook (until it's converted back); see commit #0edb555a65d1ef
 #if LINUX_VERSION_CODE < KERNEL_VERSION(6, 11, 0)
 	.remove = platdev_remove,
 #else

@@ -1,0 +1,24 @@
+1. For the Raspberry Pi 4B board:
+
+- Compile the dtdemo_platdrv module
+- Run the helper script dtb_gen_rpi onboard ... it generates the original DTS,
+  validates the (already existing) rpi4b_dtb_stuff/rpi4b_gen_dtdemo.dts DTS and
+  then builds the new DTB, copies it into /boot, sets up to use it (via /boot/config.txt).
+  Follow the steps and it should just work
+
+2. For the TI Beagle Bone Black board:
+
+- Require to generate a DT overlay here, and load it via U-Boot (only)
+- Have done so using a s very simple DT overlay DTS file (bbb_dtb_stuff/dtdemo_overlay.dts)
+  and generate the DTBO like this:
+  dtc -I dts -@ -O dtb -o dtdemo_overlay.dtbo dtdemo_overlay.dts
+- Difficult to test directly on the default BBB Debian OS; so, have used Michael Opdenacker's
+  v simple test initramfs image to successfully load up the DTBO at boot!
+- In effect, it will work on the BBB - the DT overlay enabled psuedo 'device'
+  does show up in the DT, thus the driver will work... BUT the initrd img doesn't
+  have the driver to actually test this...
+
+  The article:
+   Using Device Tree Overlays, example on BeagleBone Cape add-on boards, Michael Opdenacker, Feb 2022: https://www.beagleboard.org/blog/2022-02-15-using-device-tree-overlays-example-on-beaglebone-cape-add-on-boards 
+
+  The PDF courseware describes the process..

@@ -1,0 +1,26 @@
+/dts-v1/;
+/plugin/;
+
+/*
+ * Helper to show loaded overlays under: /proc/device-tree/chosen/overlays/
+ */
+&{/chosen} {
+        overlays {
+                DTDEMO-TEST.kernel = "Tue Oct 14 22:30:00 2000";
+        };
+};
+
+/ {
+	compatible = "ti,am335x-bone-black", "ti,am335x-bone", "ti,am33xx";
+	fragment@0 {
+		target-path = "/";
+		__overlay__ {
+			my_device {
+				compatible = "dtdemo,dtdemo_platdev";
+				aproperty = "my prop 1";
+				status = "okay";
+				my_value = <14>;
+			};
+		};
+	};
+};

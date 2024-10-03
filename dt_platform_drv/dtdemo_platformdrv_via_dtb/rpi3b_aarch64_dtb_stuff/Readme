@@ -1,3 +1,0 @@
---- on the R Pi running the Ubuntu Aarch64 kernel (4.15.0) and rootfs ---
-Generate the DTS by doing:
- dtc -I fs -O dts /proc/device-tree/ > ~/aarch64_raspi2.dts

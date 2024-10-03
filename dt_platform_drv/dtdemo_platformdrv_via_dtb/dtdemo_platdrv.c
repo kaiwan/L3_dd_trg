@@ -6,20 +6,73 @@
  * be retrieved and displayed in the platform driver!
  * Tested by modifying the DT of the Raspberry Pi 3B+ (or whichever).
  *
- * Sample DT node in the dts for our fake platform device:
+ * For the Raspberry Pi boards, a sample DT node in the dts for our fake
+ * platform device:
  * (The node name doesn't matter; it's the *compatible* property that matches
  *  with the same in this driver!):
  *
+ * F.e. for the Raspberry Pi 4B:
+ * in rpi4b_dtb_stuff/rpi4b_gen.dts :
  * ...
  * soc {
  * ...
  *        dtdemo_chip {
  *                compatible = "dtdemo,dtdemo_platdev";
- *                aproperty = "my new prop";
- *                reg = <0x1 0x2>;
+ *                aproperty = "my prop 1";
+ * 		  my_value = <14>;
  *                status = "okay";
  *        };
  * ...
+ *
+ * Working:
+ * - Convert the existing DTB to DTS:
+ *
+ * - compile the DTS into a DTB - a device tree blob binary
+ *   (or, easier, generate a DT overlay 'fragment' (a .dtbo) and specify it at
+ *    boot (via the /boot/config.txt))
+ * - boot via this DTB (or DT overlay .dtbo)
+ * - the kernel 'unrolls'/parses the DTB/DTBO at boot via it's OF APIs:
+ *    - it thus 'sees' the new dtdemo_chip (pseudo) device
+ *    - it constructs it as a platform device
+ *    - the platform bus driver is running it's 'match loop' looking to match
+ *      a platform device to it's driver via the 'compatible' property
+ * - this driver loads up, registering itse;f as a platform driver, with the
+ *   *same* 'compatible' string
+ * - this causes a ,atch! and voila, the bus driver invokes the driver's probe
+ *   routine, and we're on the way to driving it!
+ *
+ * ---------------------------------------------
+ * For the BBB - Beagle Bone Black
+ * ---------------------------------------------
+ * 1. Setup the DTBO to get oarsed at boot:
+ *    - Will have to boot via eMMC internal flash (as the /boot stuff's there)
+ *    - compile the DTS to the DTBO (DT overlay blob)
+ *    - copy it into the appropriate location: /boot/dtbs/5.10.168-ti-r79/overlays/BB-BONE-DTDEMO-01.dtbo
+ *    - insert this line into /boot/uEnv.txt to enable our DTBO to get loaded up on boot:
+ *      dtb_overlay=/boot/dtbs/5.10.168-ti-r79/overlays/BB-BONE-DTDEMO-01.dtbo
+ * 2. Boot via eMMC flash (remove the uSD card & boot)
+ * 3. U-Boot prints should show that our DTBO got loaded
+ *    ...
+ *    uboot_overlays: loading /boot/dtbs/5.10.168-ti-r79/overlays/BB-HDMI-TDA998x-00A0.dtbo ...
+ *   5321 bytes read in 6 ms (865.2 KiB/s)
+ *   uboot_overlays: [dtb_overlay=/boot/dtbs/5.10.168-ti-r79/overlays/BB-BONE-DTDEMO-01.dtbo] ...
+ *   uboot_overlays: loading /boot/dtbs/5.10.168-ti-r79/overlays/BB-BONE-DTDEMO-01.dtbo ...
+ *   432 bytes read in 6 ms (70.3 KiB/s)
+ *   loading /boot/initrd.img-5.10.168-ti-r79 ...
+ *   ...
+ *   After getting a shell:
+ *    $ cat /proc/device-tree/my_device/compatible
+ *    dtdemo,dtdemo_platdev
+ * 4. Compile and run the driver; the probe method gets called, priving it worked!
+ *    sudo insmod ././dtdemo_platdrv.ko
+ *    dmesg
+ *    ...
+ *    [  185.450304] dtdemo_platdrv:dtdemo_platdrv_init(): inserted
+ *    [  185.450591] dtdemo_platdev my_device: platform driver probe enter
+ *    [  185.450612] dtdemo_platdev my_device: DT property 'aproperty' = my prop 1 (len=10)
+ *  Done!
+ *
+ * ---------------------------------------------
  * Kaiwan N Billimoria, kaiwanTECH
  * License: Dual MIT/GPL
  */
@@ -39,19 +92,20 @@
 
 #include <linux/miscdevice.h>
 #include <linux/delay.h>
-#include <linux/of.h>   // of_* APIs (Open Firmware!)
+#include <linux/of.h>   // of_* APIs (OF = Open Firmware!)
 
 #define DRVNAME "dtdemo_platdrv"
 
 MODULE_LICENSE("Dual MIT/GPL");
 MODULE_AUTHOR("Kaiwan N Billimoria");
 MODULE_DESCRIPTION(
-"Demo: setting up a DT node, so that this platform drv can get bound");
+"Demo: setting up a DT node, so that this demo platform driver can get bound");
 
 int dtdemo_platdev_probe(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
 	const char *prop = NULL;
+	s32 myval;
 	int len = 0;
 
 	dev_dbg(dev, "platform driver probe enter\n");
@@ -59,10 +113,18 @@ int dtdemo_platdev_probe(struct platform_device *pdev)
 	if (pdev->dev.of_node) {
 		prop = of_get_property(pdev->dev.of_node, "aproperty", &len);
 		if (!prop) {
-			dev_warn(dev, "getting DT property failed\n");
+			dev_warn(dev, "getting DT property 'aproperty' failed\n");
 			return -1;
 		}
 		dev_info(dev, "DT property 'aproperty' = %s (len=%d)\n", prop, len);
+
+		// Note that the ret value isn't the property value..(the 3rd param is)
+		len = of_property_read_s32(pdev->dev.of_node, "my_value", &myval);
+		if (len < 0) {
+			dev_warn(dev, "getting DT property 'my_value' failed\n");
+			return -1;
+		}
+		dev_info(dev, "DT property 'my_value' = %d\n", myval);
 	} else {
 		dev_warn(dev, "couldn't access DT property!\n");
 		return -EINVAL;

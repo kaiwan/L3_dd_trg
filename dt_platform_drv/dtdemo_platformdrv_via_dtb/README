@@ -7,7 +7,37 @@
   Follow the steps and it should just work
 
 2. For the TI Beagle Bone Black board:
+ * ---------------------------------------------
+ * 1. Setup the DTBO to get parsed at boot:
+ *    - Will have to boot via eMMC internal flash (as the /boot stuff's there)
+ *    - compile the DTS to the DTBO (DT overlay blob)
+ *    - copy it into the appropriate location: /boot/dtbs/5.10.168-ti-r79/overlays/BB-BONE-DTDEMO-01.dtbo
+ *    - insert this line into /boot/uEnv.txt to enable our DTBO to get loaded up on boot:
+ *      dtb_overlay=/boot/dtbs/5.10.168-ti-r79/overlays/BB-BONE-DTDEMO-01.dtbo
+ * 2. Boot via eMMC flash (remove the uSD card & boot)
+ * 3. U-Boot prints should show that our DTBO got loaded
+ *    ...
+ *    uboot_overlays: loading /boot/dtbs/5.10.168-ti-r79/overlays/BB-HDMI-TDA998x-00A0.dtbo ...
+ *   5321 bytes read in 6 ms (865.2 KiB/s)
+ *   uboot_overlays: [dtb_overlay=/boot/dtbs/5.10.168-ti-r79/overlays/BB-BONE-DTDEMO-01.dtbo] ...
+ *   uboot_overlays: loading /boot/dtbs/5.10.168-ti-r79/overlays/BB-BONE-DTDEMO-01.dtbo ...
+ *   432 bytes read in 6 ms (70.3 KiB/s)
+ *   loading /boot/initrd.img-5.10.168-ti-r79 ...
+ *   ...
+ *   After getting a shell:
+ *    $ cat /proc/device-tree/my_device/compatible
+dtdemo,dtdemo_platdev
+ * 4. Compile and run the driver; the probe method gets called, priving it worked!
+ *    sudo insmod ././dtdemo_platdrv.ko
+ *    dmesg
+ *    ...
+ *    [  185.450304] dtdemo_platdrv:dtdemo_platdrv_init(): inserted
+ *    [  185.450591] dtdemo_platdev my_device: platform driver probe enter
+ *    [  185.450612] dtdemo_platdev my_device: DT property 'aproperty' = my prop 1 (len=10)
+ *  Done!
+ * ---------------------------------------------
 
+[OLDER way]
 - Require to generate a DT overlay here, and load it via U-Boot (only)
 - Have done so using a s very simple DT overlay DTS file (bbb_dtb_stuff/dtdemo_overlay.dts)
   and generate the DTBO like this:
@@ -22,3 +52,5 @@
    Using Device Tree Overlays, example on BeagleBone Cape add-on boards, Michael Opdenacker, Feb 2022: https://www.beagleboard.org/blog/2022-02-15-using-device-tree-overlays-example-on-beaglebone-cape-add-on-boards 
 
   The PDF courseware describes the process..
+
+  [End doc]

@@ -9,11 +9,13 @@
 2. For the TI Beagle Bone Black board:
  * ---------------------------------------------
  * 1. Setup the DTBO to get parsed at boot:
- *    - Will have to boot via eMMC internal flash (as the /boot stuff's there)
- *    - compile the DTS to the DTBO (DT overlay blob)
- *    - copy it into the appropriate location: /boot/dtbs/5.10.168-ti-r79/overlays/BB-BONE-DTDEMO-01.dtbo
+ *    - Can boot from either the eMMC internal flash or the uSD card.. butmthen must
+ *      accordingly supply the correct pathnames for the DTBO file of course
+ *    - compile the DTS (in bbb_dtb_stuff/) to the DTBO (DT overlay blob)
+ *    - copy it into the appropriate location; on the internal flash it's:
+ *        /boot/dtbs/5.10.168-ti-r79/overlays/BB-BONE-DTDEMO-01.dtbo
  *    - insert this line into /boot/uEnv.txt to enable our DTBO to get loaded up on boot:
- *      dtb_overlay=/boot/dtbs/5.10.168-ti-r79/overlays/BB-BONE-DTDEMO-01.dtbo
+ *       dtb_overlay=/boot/dtbs/5.10.168-ti-r79/overlays/BB-BONE-DTDEMO-01.dtbo
  * 2. Boot via eMMC flash (remove the uSD card & boot)
  * 3. U-Boot prints should show that our DTBO got loaded
  *    ...
@@ -27,7 +29,7 @@
  *   After getting a shell:
  *    $ cat /proc/device-tree/my_device/compatible
 dtdemo,dtdemo_platdev
- * 4. Compile and run the driver; the probe method gets called, priving it worked!
+ * 4. Compile and run the driver; the probe method gets called, proving it worked!
  *    sudo insmod ././dtdemo_platdrv.ko
  *    dmesg
  *    ...

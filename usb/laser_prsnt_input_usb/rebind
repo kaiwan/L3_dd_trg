@@ -15,6 +15,12 @@ MYUSB_VID=0D8D
 MYUSB_PID=1516
 #########################################################################
 
+red_highlight()
+{
+  [[ $# -eq 0 ]] && return
+  echo -e "\e[1m\e[41m$1\e[0m"
+}
+
 die()
 {
  echo >&2 "${name}:FATAL: $*" ; exit 1
@@ -130,8 +136,8 @@ do
 done
 
 [[ ${FOUND} -eq 0 ]] && {
-  echo "*** ${name}: USB device for driver \"${MY_DRIVER}\" not present/inserted? aborting... ***
-(If it's there, try unplugging, then re-inserting the USB device and then retry)"
+  red_highlight "*** ${name}: the laser presenter USB device for this driver \"${MY_DRIVER}\" isn't plugged in? Aborting... ***"
+  echo "(If it's there, try unplugging, then re-inserting the USB device and then retry)"
   exit 1
 } || {
   echo ">>> ${name}: done, device driven by \"${MY_DRIVER}\" is now ready to use! <<<"

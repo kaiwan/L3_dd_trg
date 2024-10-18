@@ -13,6 +13,7 @@ module to make it easier for beginners (and myself) to study the block layer.
 
 Features:
  * Compatible with Linux kernel from 5.10 to 6.0.
+ 	* 6.8.y - tested on x86_64 Ubuntu 24.04 and Fedora 38 only
  * Allows to create bio-based and request-based block devices.
  * Allows to create multiple block devices.
  * The Linux kernel code style is followed (checked by checkpatch.pl).

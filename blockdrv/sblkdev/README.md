@@ -45,8 +45,8 @@ rpm:
 ---
 **Alternate: Steps to test:**
 
-- ./mk.sh build
-- sudo ./loadblk.sh
+- `./mk.sh build`
+- `sudo ./loadblk.sh`
 
 *< Now partition setup and format of the (pseudo) disk follows >*
 
@@ -54,23 +54,25 @@ rpm:
 
 Apply these commands in this order:
 
-n      : New partition
+`n      : New partition`
 
-p      : type Primary  [Enter]
+`p      : type Primary  [Enter]`
 
-1      : partition # 1 [Enter]
+`1      : partition # 1 [Enter]`
 
-1      : First sector (1-2047, default 1): [Enter]
+`1      : First sector (1-2047, default 1): [Enter]`
 
-2047   : Last sector, +/-sectors or +/-size{K,M,G,T,P} (1-2047, default 2047): [Enter]
+`2047   : Last sector, +/-sectors or +/-size{K,M,G,T,P} (1-2047, default 2047): [Enter]`
 
-w      : write partition table
+`w      : write partition table`
 
-(Tip: Just pressing [Enter] typically has the correct defaults setup)
+(*Tip:* Just pressing `[Enter]` typically has the correct defaults setup)
 
-- ./blkdrv_tester.sh
+- `./blkdrv_tester.sh`
 
-(Internally fires off some disk IO; keep another terminal window open where you can watch the kernel log as it unfolds; to do so, try :
+(This script fires off some disk IO, sleeps for a few seconds, then issues a `sync`. 
+
+*Tip:* keep another terminal window open where you can watch the kernel log as it unfolds; to do so, try :
 `journalctl -kf`
 ).
 

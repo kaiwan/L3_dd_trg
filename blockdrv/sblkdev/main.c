@@ -5,6 +5,9 @@
 #include <linux/module.h>
 #include "device.h"
 
+/* Ref: GCC diagnostic pragmas:
+ * https://gcc.gnu.org/onlinedocs/gcc/Diagnostic-Pragmas.html
+ */
 #ifdef CONFIG_SBLKDEV_REQUESTS_BASED
 #pragma message("Request-based scheme selected.")
 #else

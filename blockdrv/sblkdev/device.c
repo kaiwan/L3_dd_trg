@@ -3,6 +3,7 @@
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 #include <linux/hdreg.h> /* for HDIO_GETGEO */
 #include <linux/cdrom.h> /* for CDROM_GET_CAPABILITY */
+#include <linux/version.h>
 #include "device.h"
 
 #ifdef CONFIG_SBLKDEV_REQUESTS_BASED
@@ -125,10 +126,17 @@ void _submit_bio(struct bio *bio)
 
 #endif /* CONFIG_SBLKDEV_REQUESTS_BASED */
 
-
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,5,0)
+static int _open(struct gendisk *disk, fmode_t mode)
+#else
 static int _open(struct block_device *bdev, fmode_t mode)
+#endif
 {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,5,0)
+	struct sblkdev_device *dev = disk->private_data;
+#else
 	struct sblkdev_device *dev = bdev->bd_disk->private_data;
+#endif
 
 	if (!dev) {
 		pr_err("Invalid disk private_data\n");
@@ -141,7 +149,11 @@ static int _open(struct block_device *bdev, fmode_t mode)
 	return 0;
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,5,0)
+static void _release(struct gendisk *disk)
+#else
 static void _release(struct gendisk *disk, fmode_t mode)
+#endif
 {
 	struct sblkdev_device *dev = disk->private_data;
 
@@ -406,7 +418,7 @@ struct sblkdev_device *sblkdev_add(int major, int minor, char *name,
 	blk_queue_physical_block_size(disk->queue, SECTOR_SIZE);
 	blk_queue_logical_block_size(disk->queue, SECTOR_SIZE);
 #endif
-	blk_queue_max_hw_sectors(disk->queue, BLK_DEF_MAX_SECTORS);
+	blk_queue_max_hw_sectors(disk->queue, BLK_SAFE_MAX_SECTORS);
 	blk_queue_flag_set(QUEUE_FLAG_NOMERGES, disk->queue);
 
 

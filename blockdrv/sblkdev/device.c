@@ -256,10 +256,8 @@ void sblkdev_remove(struct sblkdev_device *dev)
 #ifdef CONFIG_SBLKDEV_REQUESTS_BASED
 	blk_mq_free_tag_set(&dev->tag_set);
 #endif
-	vfree(dev->data);
-
+	kvfree(dev->data);
 	kfree(dev);
-
 	pr_info("simple block device was removed\n");
 }
 
@@ -348,7 +346,7 @@ struct sblkdev_device *sblkdev_add(int major, int minor, char *name,
 
 	INIT_LIST_HEAD(&dev->link);
 	dev->capacity = capacity;
-	dev->data = __vmalloc(capacity << SECTOR_SHIFT, GFP_NOIO | __GFP_ZERO);
+	dev->data = kvzalloc(capacity << SECTOR_SHIFT, GFP_KERNEL);
 	if (!dev->data) {
 		ret = -ENOMEM;
 		goto fail_kfree;
@@ -358,7 +356,7 @@ struct sblkdev_device *sblkdev_add(int major, int minor, char *name,
 	ret = init_tag_set(&dev->tag_set, dev);
 	if (ret) {
 		pr_err("Failed to allocate tag set\n");
-		goto fail_vfree;
+		goto fail_kvfree;
 	}
 
 	/* >=5.14: blk_mq_alloc_disk() is a kernel macro, a wrapper over
@@ -455,8 +453,8 @@ fail_put_disk:
 fail_free_tag_set:
 	blk_mq_free_tag_set(&dev->tag_set);
 #endif
-fail_vfree:
-	vfree(dev->data);
+fail_kvfree:
+	kvfree(dev->data);
 fail_kfree:
 	kfree(dev);
 fail:

@@ -42,7 +42,7 @@ static inline int process_request(struct request *rq, unsigned int *nr_bytes)
  * This is where any new request from block IO layer is handled; this is the
  * request queuing logic!
  */
-static blk_status_t _queue_rq(struct blk_mq_hw_ctx *hctx, const struct blk_mq_queue_data *bd)
+static blk_status_t sblkdev_queue_rq(struct blk_mq_hw_ctx *hctx, const struct blk_mq_queue_data *bd)
 {
 	unsigned int nr_bytes = 0;
 	blk_status_t status = BLK_STS_OK;
@@ -66,7 +66,7 @@ static blk_status_t _queue_rq(struct blk_mq_hw_ctx *hctx, const struct blk_mq_qu
 }
 
 static struct blk_mq_ops mq_ops = {
-	.queue_rq = _queue_rq,
+	.queue_rq = sblkdev_queue_rq,
 };
 
 #else  /* CONFIG_SBLKDEV_REQUESTS_BASED */
@@ -103,11 +103,11 @@ static inline void process_bio(struct sblkdev_device *dev, struct bio *bio)
 }
 
 #ifdef HAVE_QC_SUBMIT_BIO
-blk_qc_t _submit_bio(struct bio *bio)
+blk_qc_t sblkdev_submit_bio(struct bio *bio)
 {
 	blk_qc_t ret = BLK_QC_T_NONE;
 #else
-void _submit_bio(struct bio *bio)
+void sblkdev_submit_bio(struct bio *bio)
 {
 #endif
 #ifdef HAVE_BI_BDEV
@@ -133,9 +133,9 @@ void _submit_bio(struct bio *bio)
 #endif /* CONFIG_SBLKDEV_REQUESTS_BASED */
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6,5,0)
-static int _open(struct gendisk *disk, fmode_t mode)
+static int sblkdev_open(struct gendisk *disk, fmode_t mode)
 #else
-static int _open(struct block_device *bdev, fmode_t mode)
+static int sblkdev_open(struct block_device *bdev, fmode_t mode)
 #endif
 {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6,5,0)
@@ -156,9 +156,9 @@ static int _open(struct block_device *bdev, fmode_t mode)
 }
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6,5,0)
-static void _release(struct gendisk *disk)
+static void sblkdev_release(struct gendisk *disk)
 #else
-static void _release(struct gendisk *disk, fmode_t mode)
+static void sblkdev_release(struct gendisk *disk, fmode_t mode)
 #endif
 {
 	struct sblkdev_device *dev = disk->private_data;
@@ -205,7 +205,7 @@ static inline int ioctl_hdio_getgeo(struct sblkdev_device *dev, unsigned long ar
 	return 0;
 }
 
-static int _ioctl(struct block_device *bdev, fmode_t mode, unsigned int cmd, unsigned long arg)
+static int sblkdev_ioctl(struct block_device *bdev, fmode_t mode, unsigned int cmd, unsigned long arg)
 {
 	struct sblkdev_device *dev = bdev->bd_disk->private_data;
 
@@ -222,7 +222,7 @@ static int _ioctl(struct block_device *bdev, fmode_t mode, unsigned int cmd, uns
 }
 
 #ifdef CONFIG_COMPAT
-static int _compat_ioctl(struct block_device *bdev, fmode_t mode, unsigned int cmd, unsigned long arg)
+static int sblkdev_compat_ioctl(struct block_device *bdev, fmode_t mode, unsigned int cmd, unsigned long arg)
 {
 	// CONFIG_COMPAT is to allow running 32-bit userspace code on a 64-bit kernel
 	return -ENOTTY; // not supported
@@ -231,14 +231,14 @@ static int _compat_ioctl(struct block_device *bdev, fmode_t mode, unsigned int c
 
 static const struct block_device_operations fops = {
 	.owner = THIS_MODULE,
-	.open = _open,
-	.release = _release,
-	.ioctl = _ioctl,
+	.open = sblkdev_open,
+	.release = sblkdev_release,
+	.ioctl = sblkdev_ioctl,
 #ifdef CONFIG_COMPAT
-	.compat_ioctl = _compat_ioctl,
+	.compat_ioctl = sblkdev_compat_ioctl,
 #endif
 #ifndef CONFIG_SBLKDEV_REQUESTS_BASED
-	.submit_bio = _submit_bio,
+	.submit_bio = sblkdev_submit_bio,
 #endif
 };
 

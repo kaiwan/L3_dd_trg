@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0
+#define pr_fmt(fmt) "%s:%s(): " fmt, KBUILD_MODNAME, __func__
 
-#define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 #include <linux/hdreg.h> /* for HDIO_GETGEO */
 #include <linux/cdrom.h> /* for CDROM_GET_CAPABILITY */
 #include <linux/version.h>
@@ -37,12 +37,18 @@ static inline int process_request(struct request *rq, unsigned int *nr_bytes)
 	return ret;
 }
 
+/*
+ * IMPORTANT:
+ * This is where any new request from block IO layer is handled; this is the
+ * request queuing logic!
+ */
 static blk_status_t _queue_rq(struct blk_mq_hw_ctx *hctx, const struct blk_mq_queue_data *bd)
 {
 	unsigned int nr_bytes = 0;
 	blk_status_t status = BLK_STS_OK;
 	struct request *rq = bd->rq;
 
+	pr_debug("new request from block IO layer queued\n");
 	PRINT_CTX();
 	//might_sleep();
 	cant_sleep(); /* cannot use any locks that make the thread sleep */
@@ -52,7 +58,7 @@ static blk_status_t _queue_rq(struct blk_mq_hw_ctx *hctx, const struct blk_mq_qu
 	if (process_request(rq, &nr_bytes))
 		status = BLK_STS_IOERR;
 
-	pr_debug("request %llu:%d processed\n", blk_rq_pos(rq), nr_bytes);
+	pr_debug("request %llu:%d (pos:#bytes) processed\n", blk_rq_pos(rq), nr_bytes);
 
 	blk_mq_end_request(rq, status);
 
@@ -166,6 +172,7 @@ static void _release(struct gendisk *disk, fmode_t mode)
 	PRINT_CTX();
 }
 
+// get disk geometry
 static inline int ioctl_hdio_getgeo(struct sblkdev_device *dev, unsigned long arg)
 {
 	struct hd_geometry geo = {0};
@@ -264,14 +271,14 @@ void sblkdev_remove(struct sblkdev_device *dev)
 #ifdef CONFIG_SBLKDEV_REQUESTS_BASED
 static inline int init_tag_set(struct blk_mq_tag_set *set, void *data)
 {
-	set->ops = &mq_ops;
+	set->ops = &mq_ops;	// block driver behavior
 	set->nr_hw_queues = 1;
 	set->nr_maps = 1;
 	set->queue_depth = 128;
 	set->numa_node = NUMA_NO_NODE;
 	set->flags = BLK_MQ_F_SHOULD_MERGE | BLK_MQ_F_STACKING;
 
-	set->cmd_size = 0;
+	set->cmd_size = 0;	// additional bytes to alloc per request
 	set->driver_data = data;
 
 	// 'Alloc a tag set to be associated with one or more request queues.'
@@ -353,6 +360,8 @@ struct sblkdev_device *sblkdev_add(int major, int minor, char *name,
 	}
 
 #ifdef CONFIG_SBLKDEV_REQUESTS_BASED
+	// >= 6.8: this seems to be the default approach
+	pr_info("Going via explicit (longer) request-based approach\n");
 	ret = init_tag_set(&dev->tag_set, dev);
 	if (ret) {
 		pr_err("Failed to allocate tag set\n");
@@ -360,27 +369,32 @@ struct sblkdev_device *sblkdev_add(int major, int minor, char *name,
 	}
 
 	/* >=5.14: blk_mq_alloc_disk() is a kernel macro, a wrapper over
-	 * __blk_mq_alloc_disk().
+	 * blk_mq_alloc_queue() and __alloc_disk_node().
 	 * If < 5.14 we have our own implementation of this func...
 	 */
 	disk = blk_mq_alloc_disk(&dev->tag_set, dev);
 	if (unlikely(!disk)) {
 		ret = -ENOMEM;
-		pr_err("Failed to allocate disk\n");
+		pr_err("Failed to allocate disk (1)\n");
 		goto fail_free_tag_set;
 	}
 	if (IS_ERR(disk)) {
 		ret = PTR_ERR(disk);
-		pr_err("Failed to allocate disk\n");
+		pr_err("Failed to allocate disk (2)\n");
 		goto fail_free_tag_set;
 	}
 
 #else
+	pr_info("Going via simpler blk_alloc_queue() and __alloc_disk_node() method\n");
+	/* blk_alloc_disk() is actually a simpler way - wrapper - to get
+	 * the same behavior as above via init_tag_set(), blk_mq_init_queue() &
+	 * alloc_disk() (via our blk_mq_alloc_disk() function)
+	 */
 	disk = blk_alloc_disk(NUMA_NO_NODE);
 	if (!disk) {
 		pr_err("Failed to allocate disk\n");
 		ret = -ENOMEM;
-		goto fail_vfree;
+		goto fail_kvfree;
 	}
 #endif
 	/* Ok, we have the 'disk'; init it ... */
@@ -400,14 +414,14 @@ struct sblkdev_device *sblkdev_add(int major, int minor, char *name,
 	disk->first_minor = minor;
 	disk->minors = 1;
 
-	disk->fops = &fops;
-
+	disk->fops = &fops;	// blk device ops
 	disk->private_data = dev;
 
 	sprintf(disk->disk_name, name);
 	set_capacity(disk, dev->capacity);
 
 #ifdef CONFIG_SBLKDEV_BLOCK_SIZE
+	// true: set to 512
 	blk_queue_physical_block_size(disk->queue, CONFIG_SBLKDEV_BLOCK_SIZE);
 	blk_queue_logical_block_size(disk->queue, CONFIG_SBLKDEV_BLOCK_SIZE);
 	blk_queue_io_min(disk->queue, CONFIG_SBLKDEV_BLOCK_SIZE);

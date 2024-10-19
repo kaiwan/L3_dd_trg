@@ -68,6 +68,14 @@ Apply these commands in this order:
 
 (*Tip:* Just pressing `[Enter]` typically has the correct defaults setup)
 
+It might now ask:
+
+"Found a dos partition table in /dev/sblkdev1
+
+Proceed anyway? (y,N) "
+
+Type `y`
+
 - `./blkdrv_tester.sh`
 
 (This script fires off some disk IO, sleeps for a few seconds, then issues a `sync`. 

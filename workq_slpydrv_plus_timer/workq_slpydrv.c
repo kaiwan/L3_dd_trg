@@ -4,13 +4,13 @@
  * Simple demo driver; readers are put to sleep on a 
  * wait queue. Any writer coming along awakens the readers.
  *
- * Additionally, in order to demo a Work Queue feature, we have a work queue
+ * Additionally, in order to demo the kernel WorkQueue feature, we have a work queue
  * structure set up: when the driver's write method is invoked, it schedules 
  * the 'deferred work' function of our work queue. This function, in order to 
  * do something, starts up and constantly resets a kernel timer.
  *
  * This version does NOT correctly implement SMP locking, for simplicity (left 
- * as an exercise to the participant!); this is done in the slpy_proper.c driver.
+ * as an exercise to you dera reader!); this is done in the slpy_proper.c driver.
  *
  * Author: Kaiwan N Billimoria <kaiwan@kaiwantech.com>
  * Dual MIT/GPL
@@ -140,7 +140,10 @@ static int __init workq_slpydrv_init_module(void)
 static void __exit workq_slpydrv_cleanup_module(void)
 {
 	del_timer_sync(&timr);
-	flush_scheduled_work();
+	/* lets not flush the kernel default WQ; see the warning:
+	 warning: call to ‘__warn_flushing_systemwide_wq’ declared with attribute warning: Please avoid flushing system-wide workqueues.
+	 */
+	//flush_scheduled_work();
 	unregister_chrdev(sleepy_major, DRVNAME);
 	pr_debug("Removed.\n");
 }

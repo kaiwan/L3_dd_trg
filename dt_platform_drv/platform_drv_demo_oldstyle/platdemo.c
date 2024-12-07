@@ -33,6 +33,8 @@ MODULE_LICENSE("Dual MIT/GPL");
 #define DRVNAME  "platdemo"
 /*------------------------ Structs, prototypes, .. ------------------*/
 static int platdev_probe(struct platform_device *);
+
+// From 6.11, use the remove_new hook (until it's converted back); see commit #0edb555a65d1ef
 #if LINUX_VERSION_CODE < KERNEL_VERSION(6, 11, 0)
 static int platdev_remove(struct platform_device *);
 #else
@@ -42,9 +44,12 @@ static void plat0_release(struct device *);
 
 /* Platform Device */
 static struct platform_device plat0 = {
-#if 1		/* Make 1 to test using different names in the platform device and driver;
-		 * We find that the driver core then can't bind them, and the probe method
-		 * is never invoked...
+#if 1		/*
+		 * Make 0 to test using different names in the platform device
+		 * and driver.
+		 * We find that unless the name given here *precisely* matches
+		 * the name provided in the platform_driver structure, the driver
+		 * core can't bind them, and the probe method is never invoked...
 		 */
 	.name = "splat",	// oops, bad name...!
 	/* ... But then again, we can use the 'driver_override' member to force
@@ -52,7 +57,7 @@ static struct platform_device plat0 = {
 	 */
 	.driver_override = DRVNAME,	/* Driver name to force a match! */
 #else
-	.name = DRVNAME,
+	.name = "wrong_name",
 #endif
 	.id = 0,
 	.dev = {
@@ -75,7 +80,6 @@ static struct platform_device *platdemo_platform_devices[] __initdata = {
 /* Platform Driver */
 static struct platform_driver platdrv = {
 	.probe = platdev_probe,
-// From 6.11, use the remove_new hook (until it's converted back); see commit #0edb555a65d1ef
 #if LINUX_VERSION_CODE < KERNEL_VERSION(6, 11, 0)
 	.remove = platdev_remove,
 #else
@@ -94,7 +98,7 @@ static struct platform_driver platdrv = {
 
 /* Most drivers have a global "context" struct that gets passed around .. */
 struct stMyCtx {
-	//struct net_device *netdev; // or whichever appropriate 'specialized' by-type structure
+	//struct net_device *netdev; // or whichever appropriate struct 'specialized' by-type
 	int txpktnum, rxpktnum;
 	int tx_bytes, rx_bytes;
 	unsigned int data_xform;
@@ -151,18 +155,31 @@ static int __init platdev_init(void)
 		return -ENOMEM;
 	plat0.dev.platform_data = pstCtx;	// convenient to access later
 
-	/* Here, we're simply 'manually' adding a platform device (old-style)
+	/*
+	 * Here, we're simply 'manually' adding a platform device (old-style)
 	 * via the platform_add_devices() API, which is a wrapper over
 	 * platform_device_register().
-	 * (The preferred modern way is to do so via the DT; here, the DT devices
-	 * are generated as platform devices by the kernel at early boot)
+	 * The preferred modern way is to do so via the Device Tree (DT)! In
+	 * this (modern) approach, the DT devices are auto-generated as platform
+	 * devices by the kernel at early boot
 	 */
 	res = platform_add_devices(platdemo_platform_devices,
 				   ARRAY_SIZE(platdemo_platform_devices));
 	if (res) {
-		pr_warn("platform_add_devices failed!\n");
+		pr_warn("platform_add_devices() failed!\n");
 		goto out_fail_pad;
 	}
+
+	/*
+	 * As stated: (V IMP!)
+	 * - In the init code: the client driver (us) must register itself to
+	 * an appropriate bus driver (infrastructure) as it relies upon it
+	 * - When recognized as a driver capable of driving a device that’s
+	 * become visible (or has already been visible), the kernel bus driver
+	 * invokes the client’s driver probe() method
+	 * - In probe(), it could register itself to some existing kernel
+	 * framework
+	 */
 
 	// Register ourself with the platform bus driver, as we're a platform device
 	res = platform_driver_register(&platdrv);

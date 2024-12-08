@@ -159,6 +159,10 @@ clean:
 	rm -f *~
 
 # Any usermode programs to build? Insert the build target(s) here
+rd_tst: rd_tst.c
+	$(CC) rd_tst.c -o rd_tst -Wall -Os
+wr_tst: wr_tst.c
+	$(CC) wr_tst.c -o wr_tst -Wall -Os
 
 #--------------- More (useful) targets! -------------------------------
 INDENT := indent

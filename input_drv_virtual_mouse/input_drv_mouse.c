@@ -177,7 +177,7 @@ static int __init input_drv_vmouse_init(void)
 	/*
 	 * A potentially confusing aspect: as this is the first time, we
 	 * explain it via this comment:
-	 * The &dev_attr_vms above (2nd param to the
+	 * The &dev_attr_vms structure seen above (2nd param to the
 	 * device_create_file() API), is actually *instantiated* via this
 	 * declaration above:
 	 *  static DEVICE_ATTR_WO(vms);

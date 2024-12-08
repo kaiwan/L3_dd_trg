@@ -329,6 +329,7 @@ static void usb_wimouse_close(struct input_dev *dev)
 
 static struct usb_device_id dev_table[] = {
 	{USB_DEVICE(USB_DELL_WIRELESS_MOUSE_VID, USB_DELL_WIRELESS_MOUSE_PID)},
+//	{USB_DEVICE(0x046d,0xc52e)}, // Logitech MK260 Wireless Combo Receiver
 	{}
 };
 

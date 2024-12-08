@@ -62,7 +62,7 @@ struct usb_laserpdl {
 /*
  * This is the 'response' portion of the USB URB request-response mechanism
  * - the (in effect) IRQ handler. It runs in interrupt (atomic) context - don't
- * sleep!
+ * sleep!  (the 'open' method was the 'request' portion)
  *
  * Ref: https://www.kernel.org/doc/html/latest/driver-api/usb/URB.html#what-about-the-completion-handler 
  */
@@ -129,7 +129,15 @@ Seems to Require that inputX is READ by something/anything, then it works..
 			pr_debug("data[%d]=0x%x (%d)\n", i, data[i], data[i]);
 	}
 
-	// Report which buttons or relative (x,y) was pressed/moved
+	/*
+	 * The key thing : report which buttons or relative (x,y) was
+	 * pressed/moved to the input layer
+	 *
+	 * The third param to input_report_key() is a Bool; when True the event
+	 * is reported.. so here, f.e., we report that the ;aser device's top-rt
+	 * button has been pressed when data[3] == 0x4e ; this is as this is
+	 * empirically seen to be the case! Likewise with the other buttons...
+	 */
 	input_report_key(dev, LASER_TOP_LEFT_BTN, (data[3] == 0x4b));
 	input_report_key(dev, LASER_TOP_RIGHT_BTN, (data[3] == 0x4e));
 	input_report_key(dev, LASER_BOTTOM_LEFT_BTN, ((data[3] == 0x3e) || (data[3] == 0x29)));
@@ -154,17 +162,30 @@ static int dev_probe(struct usb_interface *intf, const struct usb_device_id *id)
 	 */
 	interface = intf->cur_altsetting;
 
+	/*
+	 * FYI, the USB device hierarchy (or descriptor structures) goes like this:
+	 *  Device
+	 *    Configuration(s)   // usually only 1 & only 1 active at any time
+	 *      Interface(s)
+	 *        Endpoint(s)
+	 *
+	 * Run
+	 * sudo lsusb [-d <VID>:<PID>] -v
+	 * to see the full picture..
+	 */
+
 	pr_info("USB interface %d now probed: (%04X:%04X)\n",
 		interface->desc.bInterfaceNumber, id->idVendor, id->idProduct);
 	pr_info("Number of endpoints: %02X\n", interface->desc.bNumEndpoints);
 	pr_info("Interface class: %02X\n", interface->desc.bInterfaceClass);
+		// here, this is '3' which is 'Human Interface Device' (HID)
 
 	if (interface->desc.bNumEndpoints != 1)
 		return -ENODEV;
 
 	endpoint = &interface->endpoint[0].desc;
-	/* Must be an Interrupt
-	 * type endpoint w/ dir as IN (i.e. it sends data IN to the host computer)
+	/* Must be an Interrupt type endpoint with direction as IN (i.e.
+	 * it sends data IN to the host computer)
 	 */
 	if (!usb_endpoint_is_int_in(endpoint))
 		return -ENODEV;
@@ -185,6 +206,16 @@ static int dev_probe(struct usb_interface *intf, const struct usb_device_id *id)
 	if (!laserpdl->data)
 		goto fail1;
 
+	/*
+	 * usb_alloc_urb()
+	 * Creates an urb for the USB driver to use, initializes a few internal
+	 * structures, increments the usage counter, and returns a pointer to it.
+	 *
+	 * If the driver want to use this urb for interrupt, control, or bulk
+	 * endpoints, pass '0' as the number of iso packets.
+	 *
+	 * The driver must call usb_free_urb() when it is finished with the urb.
+	 */
 	laserpdl->irq_urb = usb_alloc_urb(0, GFP_KERNEL);
 	if (!laserpdl->irq_urb)
 		goto fail2;
@@ -233,8 +264,8 @@ static int dev_probe(struct usb_interface *intf, const struct usb_device_id *id)
 	 * Add button events
 	 * See include/uapi/linux/input-event-codes.h
 	 */
-	set_bit(EV_KEY, input_dev->evbit);
-	set_bit(LASER_TOP_LEFT_BTN, input_dev->keybit);
+	set_bit(EV_KEY, input_dev->evbit); // type of 'event' is key (press & rel)
+	set_bit(LASER_TOP_LEFT_BTN, input_dev->keybit); // ... and these are the actual keys being mapped
 	set_bit(LASER_TOP_RIGHT_BTN, input_dev->keybit);
 	set_bit(LASER_BOTTOM_LEFT_BTN, input_dev->keybit);
 	set_bit(LASER_BOTTOM_RIGHT_BTN, input_dev->keybit);
@@ -268,6 +299,11 @@ static int dev_probe(struct usb_interface *intf, const struct usb_device_id *id)
 	usb_set_intfdata(intf, laserpdl);
 
 	return 0;
+	/*
+	 * Now what happens?
+	 * The 'open' method - here usb_laserpdl_open() - gets invoked;
+	 * it verifies things and then submits the URB
+	 */
 
  fail3:
 	usb_free_urb(laserpdl->irq_urb);
@@ -298,7 +334,7 @@ static int usb_laserpdl_open(struct input_dev *dev)
 {
 	struct usb_laserpdl *laserpdl;
 
-	pr_debug("usb laserpdl open\n");
+	dev_dbg(&dev->dev, "usb laserpdl open\n");
 	laserpdl = input_get_drvdata(dev);
 	if (!laserpdl) {
 		pr_info("no laserpdl\n");
@@ -312,13 +348,22 @@ static int usb_laserpdl_open(struct input_dev *dev)
 		pr_info("No laserpdl->irq_urb\n");
 		return -1;
 	}
-	//pr_debug("irq ok\n");
+	//pr_debug("irq urb ok\n");
 	laserpdl->irq_urb->dev = laserpdl->usbdev;
 
 	if (usb_submit_urb(laserpdl->irq_urb, GFP_KERNEL)) {
 		pr_info("Failed submiting urb\n");
 		return -1;
 	}
+	/*
+	 * '...  This submits a transfer request, and transfers control of the URB
+	 * describing that request to the USB subsystem.  Request completion will
+	 * be indicated later, asynchronously, by calling the completion handler. ...'
+	 * So, here, this will result in our 'irq handler - usb_laserpdl_irq() -
+	 * being asynchronously invoked!
+	 * IOW, this is the 'request' portion of the USB URB request-response mechanism
+	 * (the 'IRQ handler' is of course the 'response' portion)
+	 */
 	pr_debug("submit urb ok\n");
 
 	return 0;

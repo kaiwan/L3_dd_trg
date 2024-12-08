@@ -2009,6 +2009,7 @@
                 dtdemo_chip {
                         compatible = "dtdemo,dtdemo_platdev";
                         aproperty = "my prop 1";
+			myvalue = <55>;
                         status = "okay";
                 };
 

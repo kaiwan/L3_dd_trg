@@ -1,0 +1,4 @@
+#!/bin/bash
+
+echo "sudo lsusb -v|egrep -A1 'iManufac|bNum|bEndpointAddress'"
+sudo lsusb -v|egrep -A1 'iManufac|bNum|bEndpointAddress'

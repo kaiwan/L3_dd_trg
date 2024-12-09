@@ -1,0 +1,5 @@
+#!/bin/bash
+COUNT=1
+PORT=54295
+
+sudo tcpdump -i any -XX -e -p -n -s0 -tttt -# -v -c${COUNT} port ${PORT}

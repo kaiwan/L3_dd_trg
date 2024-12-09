@@ -76,7 +76,8 @@ endif
 #---
 
 # Compiler
-CC     := $(CROSS_COMPILE)gcc-12
+CC     := $(CROSS_COMPILE)gcc
+#CC     := $(CROSS_COMPILE)gcc-12
 #CC    := clang
 STRIP := ${CROSS_COMPILE}strip
 

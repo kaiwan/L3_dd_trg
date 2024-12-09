@@ -45,7 +45,8 @@ if [[ -z "${FIRST_INTF}" ]] ; then
 fi
 ip link |grep "${FIRST_INTF}.*UP" >/dev/null
 [[ $? -ne 0 ]] && {
-  echo "${name}: error with interface ${FIRST_INTF}? shows as not being UP" ; exit 1
+  echo "${name}: warning: issue with interface ${FIRST_INTF}? shows as not being UP"
+  #exit 1
 }
 IP_FIRST_INTF=$(getIP ${FIRST_INTF})
 #echo "FIRST_INTF=${FIRST_INTF} IP_FIRST_INTF=${IP_FIRST_INTF}"

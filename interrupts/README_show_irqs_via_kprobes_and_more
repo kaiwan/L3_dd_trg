@@ -1,0 +1,47 @@
+README
+
+1. One more way to see, actually to *trap* into, when (almost) any kernel
+or module code runs, is via the powerful Kprobes kernel mechanism.
+
+For the 'Linux Kernel Debugging' book, I wrote an interesting script - kp_load.sh;
+it allows one to trap into almost any kernel / module function and optionally
+display  the call stack (that led up to this func being called!).
+
+It's here:
+https://github.com/PacktPublishing/Linux-Kernel-Debugging/tree/main/ch4/kprobes/4_kprobe_helper
+
+Example: trap into the Intel e1000 network driver's hardirq handler:
+sudo ./kp_load.sh --probe=e1000_intr --verbose --showstack
+(look up dmesg, then rmmod it).
+
+
+2. Even simpler, via the kernel's event tracing infrastructure:
+ref: https://www.kernel.org/doc/html/latest/trace/events.html#event-tracing
+
+Do this
+# echo 'irq:*' > /sys/kernel/tracing/set_event
+# cat /sys/kernel/tracing/trace_pipe
+
+to see all irq related events !
+
+More generally (as root):
+cd /sys/kernel/tracing
+
+ls events/irq
+enable  irq_handler_entry/  softirq_entry/  softirq_raise/  tasklet_exit/
+filter  irq_handler_exit/   softirq_exit/   tasklet_entry/
+
+# capture hardirq entry for 1s
+echo 1 > events/irq/irq_handler_entry/enable ; sleep 1; echo 0 > events/irq/irq_handler_entry/enable
+
+# show results
+cat trace_pipe
+...
+...
+ <idle>-0       [005] d.h1. 521639.978305: irq_handler_entry: irq=178 name=iwlwifi:default_queue
+ <idle>-0       [004] d.h1. 521639.979391: irq_handler_entry: irq=183 name=iwlwifi:queue_5
+ StreamT~s #5139-1549368 [009] d.h.. 521639.991592: irq_handler_entry: irq=194 name=eno2
+ <idle>-0       [008] d.h1. 521639.995020: irq_handler_entry: irq=193 name=i915
+...
+
+(Hm, i curr find it works on my native Linux system but not on a VM ??)

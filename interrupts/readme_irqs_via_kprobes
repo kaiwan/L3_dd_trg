@@ -1,0 +1,15 @@
+Readme
+
+One more way to see, actually to *trap* into, when (almost) any kernel
+or module code runs, is via the powerful Kprobes kernel mechanism.
+
+For the 'Linux Kernel Debugging' book, I wrote an interesting script - kp_load.sh;
+it allows one to trap into almost any kernel / module function and optionally
+display  the call stack (that led up to this func being called!).
+
+It's here:
+https://github.com/PacktPublishing/Linux-Kernel-Debugging/tree/main/ch4/kprobes/4_kprobe_helper
+
+Example: trap into the Intel e1000 network driver's hardirq handler:
+sudo ./kp_load.sh --probe=e1000_intr --verbose --showstack
+(look up dmesg, then rmmod it).

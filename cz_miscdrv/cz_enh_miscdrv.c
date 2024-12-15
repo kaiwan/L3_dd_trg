@@ -97,7 +97,7 @@ static ssize_t czero_read(struct file *filp, char __user *buf,
 	memset(zbuf, 0, mcount);
 #endif
 
-#define FILL_PATTERN   1
+#define FILL_PATTERN   0
 #if (FILL_PATTERN == 1)
 	/* lets fill it with 'deadface' ! */
 	for (i = 0; i < mcount / 4; i++) {

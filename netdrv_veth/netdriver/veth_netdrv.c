@@ -202,7 +202,7 @@ static int vnet_stop(struct net_device *ndev)
 	return 0;
 }
 
-// Do an 'ifconfig veth3' to see the effect of this 'getstats' routine..
+// Do an 'ifconfig veth' to see the effect of this 'getstats' routine..
 static struct net_device_stats ndstats;
 static struct net_device_stats *vnet_get_stats(struct net_device *ndev)
 {
@@ -380,4 +380,4 @@ module_exit(vnet_exit);
 MODULE_DESCRIPTION("Simple demo virtual ethernet (NIC) driver; allows a user \
 app to transmit a UDP packet via this network driver");
 MODULE_AUTHOR("Kaiwan N Billimoria");
-MODULE_LICENSE("GPL");
+MODULE_LICENSE("Dual MIT/GPL");

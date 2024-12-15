@@ -47,7 +47,8 @@ static ssize_t sleepy_read(struct file *filp, char __user * buf,
 		if (wait_event_interruptible
 		    (wq, (atomic_read(&data_present) == 1))) {
 			pr_debug("wait interrupted by signal, ret -ERESTARTSYS to VFS..\n");
-			return -ERESTARTSYS;
+			return -EINTR;
+			//return -ERESTARTSYS; // old way
 		}
 		/* 
 		 * Blocks here..the reader (user context) process is put to sleep;

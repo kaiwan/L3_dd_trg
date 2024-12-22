@@ -44,4 +44,14 @@ cat trace_pipe
  <idle>-0       [008] d.h1. 521639.995020: irq_handler_entry: irq=193 name=i915
 ...
 
-(Hm, i curr find it works on my native Linux system but not on a VM ??)
+
+3. Trap into whenever a tasklet is scheduled to run!
+
+sudo kprobe-perf -s 'p:mytasklets __tasklet_schedule'
+
+Interestingly, this triggers on various events, where interrupts with tasklets
+as bottom halves exist:
+  keyboard / input driver (just press/release any keyboard key to see it fire!)
+  some types of network drivers
+  some block drivers
+

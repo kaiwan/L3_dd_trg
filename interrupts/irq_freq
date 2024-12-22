@@ -11,7 +11,7 @@ waiting()
   for i in $(seq 1 ${1})
   do
     printf "."
-	sleep 1
+    sleep 1
   done
   printf "\r"
 }
@@ -25,6 +25,7 @@ NUMSEC=10
 LAST_TIMESTAMP=""
 echo "${name}: pl wait as data's gathered... (${NUMSEC}s)"
 waiting ${NUMSEC} &
+echo "sudo argdist-bpfcc -C 't:irq:irq_handler_entry():int:args->irq' -n ${NUMSEC} 2>/dev/null"
 OUT=$(sudo argdist-bpfcc -C 't:irq:irq_handler_entry():int:args->irq' -n ${NUMSEC} 2>/dev/null)
 HDR="    Time   IRQ-freq                               IRQ"
 echo "${HDR}"

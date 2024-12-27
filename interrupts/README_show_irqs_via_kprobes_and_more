@@ -45,7 +45,11 @@ cat trace_pipe
 ...
 
 
-3. Trap into whenever a tasklet is scheduled to run!
+3. *Even* simpler :-) use our evtrc wrapper script to do precisely the above (2):
+    https://github.com/kaiwan/L5_kernel_debug/blob/main/tracing/evtrc 
+
+
+4. Trap into whenever a tasklet is scheduled to run!
 
 sudo kprobe-perf -s 'p:mytasklets __tasklet_schedule'
 
@@ -54,4 +58,3 @@ as bottom halves exist:
   keyboard / input driver (just press/release any keyboard key to see it fire!)
   some types of network drivers
   some block drivers
-

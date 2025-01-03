@@ -34,7 +34,7 @@
 int main(int argc, char **argv)
 {
 	int fd;
-	size_t n;
+	ssize_t n;
 	char buf[SZ];
 
 	if (argc == 1) {
@@ -42,8 +42,10 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
-	if ((fd = open(argv[1], FLGS, DMODE)) == -1)
-		perror("open"), exit(1);
+	fd = open(argv[1], FLGS, DMODE);
+	if (fd == -1) {
+		perror("open"); exit(1);
+	}
 
 	for (n = 0; n < SZ; n++)
 		buf[n] = '\0';
@@ -55,7 +57,7 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
-	printf("sleepy:: wrote %ld bytes\n", n);
+	printf("sleepy:: wrote %zd bytes\n", n);
 	close(fd);
 	exit(0);
 }

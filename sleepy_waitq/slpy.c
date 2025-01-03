@@ -1,77 +1,80 @@
 /*
- * slpy.c 
- * Simple demo driver; readers are put to sleep on a 
+ * slpy.c
+ * Simple demo driver; readers are put to sleep on a
  * wait queue. Any writer coming along awakens the readers.
  * This version does implement proper SMP locking.
+ * Uses the 'misc' char driver framework.
  *
- * Author: Kaiwan N Billimoria <kaiwan@kaiwantech.com>
+ * Author: Kaiwan N Billimoria
  * License: Dual GPL/MIT
  */
+#define pr_fmt(fmt) "%s:%s(): " fmt, KBUILD_MODNAME, __func__
 
-/* 
- * #define	DEBUG	1     //set to 0 to turn off debug messages
- * 
- * Lets not hardcode the debug flag. In the Makefile, 
- * you can specify this using:
- * EXTRA_CFLAGS += -DDEBUG
- * (under the "obj-m" line) if you want the flag defined.
- */
-#include <linux/kernel.h>
-#include <linux/module.h>
 #include <linux/init.h>
-#include <linux/wait.h>
-#include <linux/fs.h>
-#include <linux/sched.h>	/* current, jiffies */
+#include <linux/module.h>
+#include <linux/miscdevice.h>
+#include <linux/slab.h>		// k[m|z]alloc(), k[z]free(), ...
+#include <linux/mm.h>		// kvmalloc()
+#include <linux/fs.h>		// the fops
+#include <linux/sched.h>	// get_task_comm()
 
-#define	DRVNAME		"slpy"
+// copy_[to|from]_user()
+#include <linux/version.h>
+#if LINUX_VERSION_CODE > KERNEL_VERSION(4, 11, 0)
+#include <linux/uaccess.h>
+#else
+#include <asm/uaccess.h>
+#endif
+
+#include "../convenient.h"
 
 static atomic_t data_present = ATOMIC_INIT(0);	/* event condition flag */
-static int sleepy_major = 0;
 DECLARE_WAIT_QUEUE_HEAD(wq);
 
 MODULE_AUTHOR("Kaiwan");
-MODULE_DESCRIPTION("Trivial demo of using a wait queue.");
+MODULE_DESCRIPTION("Trivial demo of using a wait queue");
 MODULE_LICENSE("GPL/MIT");
 
-/* 
- * In this demo driver, we just put the current reader to sleep 
- * trivially..; in a 'real' driver one would check: no data available?
- * put the reader to sleep, else continue...stuff like that.
+/*
+ * In this demo driver, we just put the current reader to sleep
+ * trivially..; in a 'real' driver one would check at the h/w level: is data
+ * available? If no, put the reader to sleep, else continue...stuff like that.
  */
-static ssize_t sleepy_read(struct file *filp, char __user * buf,
-			   size_t count, loff_t * offp)
+static ssize_t sleepy_read(struct file *filp, char __user *buf, size_t count, loff_t *offp)
 {
-	if (atomic_read(&data_present) == 0) {
-		pr_debug("process %d (%s) going to sleep\n", current->pid,
-		    current->comm);
-		if (wait_event_interruptible
-		    (wq, (atomic_read(&data_present) == 1))) {
+	/*
+	 * We don't make any assumptions when we're awoken; no, we recheck the
+	 * predicate (condition) via the while()... only if data is available
+	 * we proceed outside the loop, else we put the process ctx to sleep
+	 * once again!
+	 */
+	while (atomic_read(&data_present) == 0) {
+		pr_debug("process %d (%s) going to sleep\n", current->pid, current->comm);
+		if (wait_event_interruptible(wq, (atomic_read(&data_present) == 1))) {
 			pr_debug("wait interrupted by signal, ret -ERESTARTSYS to VFS..\n");
 			return -EINTR;
 			//return -ERESTARTSYS; // old way
 		}
-		/* 
+		/*
 		 * Blocks here..the reader (user context) process is put to sleep;
-		 * this is actually effected by making the 
+		 * this is actually effected by making the
 		 * task state <- TASK_INTERRUPTIBLE and invoking the scheduler.
 		 */
 		pr_debug("awoken %d (%s), data_present=%d\n",
-		    current->pid, current->comm, atomic_read(&data_present));
-	} else {
-		pr_debug("%d (%s): Data is available, proceeding...\n",
-		    current->pid, current->comm);
-		/* Actual read work done here (in a 'real' driver)... */
+			 current->pid, current->comm, atomic_read(&data_present));
 	}
+	pr_debug("%d (%s): Data is available, proceeding...\n", current->pid, current->comm);
+	/* Actual read work done here (in a 'real' driver)... */
+
 	return count;
 }
 
-static ssize_t sleepy_write(struct file *filp, const char __user * buf,
-			    size_t count, loff_t * offp)
+static ssize_t sleepy_write(struct file *filp, const char __user *buf,
+			    size_t count, loff_t *offp)
 {
-	pr_debug("process %d (%s) awakening the readers...\n",
-	    current->pid, current->comm);
+	pr_debug("process %d (%s) awakening the readers...\n", current->pid, current->comm);
 
-	/* Set the wake-up event condition to True, simulating the 
+	/* Set the wake-up event condition to True, simulating the
 	 * "data is available" condition... */
 	atomic_set(&data_present, 1);
 	/* and awaken all the lazy sleepy heads :-) */
@@ -80,33 +83,45 @@ static ssize_t sleepy_write(struct file *filp, const char __user * buf,
 	return count;
 }
 
-static struct file_operations sleepy_fops = {
-	.owner = THIS_MODULE,
-	.llseek = no_llseek,
+/* The driver 'functionality' is encoded via the fops */
+static const struct file_operations slpy_misc_fops = {
 	.read = sleepy_read,
 	.write = sleepy_write,
+	.llseek = no_llseek,	// dummy, we don't support lseek(2)
 };
 
-static int __init slpy_init_module(void)
+static struct miscdevice slpy_miscdev = {
+	.minor = MISC_DYNAMIC_MINOR,	/* kernel dynamically assigns a free minor# */
+	.name = "slpy_miscdrv",	/* when misc_register() is invoked, the kernel
+				 * will auto-create device file as /dev/slpy_miscdrv;
+				 *  also populated within /sys/class/misc/ and /sys/devices/virtual/misc/ */
+	.mode = 0666,		/* ... dev node perms set as specified here */
+	.fops = &slpy_misc_fops,	/* connect to this driver's 'functionality' */
+};
+
+static int __init miscdrv_rdwr_init(void)
 {
-	int result;
+	int ret = 0;
+	struct device *dev;
 
-	result = register_chrdev(sleepy_major, DRVNAME, &sleepy_fops);
-	if (result < 0)
-		return result;
-
-	if (sleepy_major == 0)
-		sleepy_major = result;
-	printk(KERN_DEBUG "sleepy: major # = %d\n", sleepy_major);
+	ret = misc_register(&slpy_miscdev);
+	if (ret) {
+		pr_err("misc device registration failed, aborting\n");
+		return ret;
+	}
+	/* Retrieve the device pointer for this device */
+	dev = slpy_miscdev.this_device;
+	dev_info(dev, "'sleepy' misc driver (major # 10) registered, minor# = %d,"
+		" dev node is /dev/%s\n", slpy_miscdev.minor, slpy_miscdev.name);
 
 	return 0;		/* success */
 }
 
-static void __exit slpy_cleanup_module(void)
+static void __exit miscdrv_rdwr_exit(void)
 {
-	unregister_chrdev(sleepy_major, DRVNAME);
-	pr_debug("Removed.\n");
+	misc_deregister(&slpy_miscdev);
+	pr_info("slpy misc driver deregistered\n");
 }
 
-module_init(slpy_init_module);
-module_exit(slpy_cleanup_module);
+module_init(miscdrv_rdwr_init);
+module_exit(miscdrv_rdwr_exit);

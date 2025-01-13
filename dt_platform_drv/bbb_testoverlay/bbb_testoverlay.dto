@@ -1,0 +1,18 @@
+/dts-v1/;
+/plugin/;
+
+&{/chosen} {
+	overlays {
+		BB-TEST-OVERLAY.kernel = "Tue Oct 14 22:31:00 2000"; 
+	};
+};
+&{/ocp} {
+	/* Create a (pseudo) demo on-chip peripheral (ocp) named 'my_device' */
+	my_device {
+		compatible = "mycorp,mydev";
+		status = "okay";
+		label = "Test";
+		my_value = <12>;
+	};
+};
+

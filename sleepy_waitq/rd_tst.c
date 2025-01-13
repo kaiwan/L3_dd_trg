@@ -34,7 +34,7 @@
 
 void sig(int signum)
 {
-	fprintf(stderr, "In sig: signum=%d\n", signum);
+	fprintf(stderr, "In %s(): signum=%d\n", __func__, signum);
 }
 
 int main(int argc, char **argv)
@@ -45,8 +45,7 @@ int main(int argc, char **argv)
 	size_t num = 0;
 
 	if (argc != 3) {
-		fprintf(stderr, "Usage: %s device_file num_bytes_to_read\n",
-			argv[0]);
+		fprintf(stderr, "Usage: %s device_file num_bytes_to_read\n", argv[0]);
 		exit(1);
 	}
 
@@ -54,17 +53,17 @@ int main(int argc, char **argv)
 	act.sa_flags = SA_RESTART;
 	sigemptyset(&act.sa_mask);
 	if ((sigaction(SIGINT, &act, 0)) == -1) {
-		perror("sigaction"), exit(1);
+		perror("sigaction"); exit(1);
 	}
 
-	if ((fd = open(argv[1], FLGS, DMODE)) == -1)
+	fd = open(argv[1], FLGS, DMODE)
+	if (fd == -1)
 		perror("open"), exit(1);
 	printf("device opened: fd=%d\n", fd);
 
 	num = atoi(argv[2]);
-	if ((num < 0) || (num > INT_MAX)) {
-		fprintf(stderr, "%s: number of bytes '%ld' invalid.\n", argv[0],
-			num);
+	if (num > INT_MAX) {
+		fprintf(stderr, "%s: number of bytes '%zu' invalid.\n", argv[0], num);
 		close(fd);
 		exit(1);
 	}
@@ -83,7 +82,7 @@ int main(int argc, char **argv)
 		close(fd);
 		exit(1);
 	}
-	//buf[n]='\0'; 
+	//buf[n]='\0';
 	/*
 	   Interesting! If the above line is compiled in, we get this error:
 	   *** glibc detected *** ./rd_tst: double free or corruption (!prev): 0x097e6008 ***

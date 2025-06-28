@@ -23,6 +23,7 @@ dmesg -C
 [[ ! -f ${DRVNAME}.ko ]] && {
 	./mk.sh build || exit 1
 }
+# use defaults: (params) "sblkdev1,2048;sblkdev2,4096"
 insmod ./${DRVNAME}.ko || exit 1
 dmesg
 # dev nodes auto-created...

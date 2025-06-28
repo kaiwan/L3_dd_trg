@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0
+#define pr_fmt(fmt) "%s:%s(): " fmt, KBUILD_MODNAME, __func__
 
-#define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 #include <linux/hdreg.h> /* for HDIO_GETGEO */
 #include <linux/cdrom.h> /* for CDROM_GET_CAPABILITY */
+#include <linux/version.h>
 #include "device.h"
 
 #ifdef CONFIG_SBLKDEV_REQUESTS_BASED
@@ -36,12 +37,18 @@ static inline int process_request(struct request *rq, unsigned int *nr_bytes)
 	return ret;
 }
 
-static blk_status_t _queue_rq(struct blk_mq_hw_ctx *hctx, const struct blk_mq_queue_data *bd)
+/*
+ * IMPORTANT:
+ * This is where any new request from block IO layer is handled; this is the
+ * request queuing logic!
+ */
+static blk_status_t sblkdev_queue_rq(struct blk_mq_hw_ctx *hctx, const struct blk_mq_queue_data *bd)
 {
 	unsigned int nr_bytes = 0;
 	blk_status_t status = BLK_STS_OK;
 	struct request *rq = bd->rq;
 
+	pr_debug("new request from block IO layer queued\n");
 	PRINT_CTX();
 	//might_sleep();
 	cant_sleep(); /* cannot use any locks that make the thread sleep */
@@ -51,7 +58,7 @@ static blk_status_t _queue_rq(struct blk_mq_hw_ctx *hctx, const struct blk_mq_qu
 	if (process_request(rq, &nr_bytes))
 		status = BLK_STS_IOERR;
 
-	pr_debug("request %llu:%d processed\n", blk_rq_pos(rq), nr_bytes);
+	pr_debug("request %llu:%d (pos:#bytes) processed\n", blk_rq_pos(rq), nr_bytes);
 
 	blk_mq_end_request(rq, status);
 
@@ -59,7 +66,7 @@ static blk_status_t _queue_rq(struct blk_mq_hw_ctx *hctx, const struct blk_mq_qu
 }
 
 static struct blk_mq_ops mq_ops = {
-	.queue_rq = _queue_rq,
+	.queue_rq = sblkdev_queue_rq,
 };
 
 #else  /* CONFIG_SBLKDEV_REQUESTS_BASED */
@@ -96,11 +103,11 @@ static inline void process_bio(struct sblkdev_device *dev, struct bio *bio)
 }
 
 #ifdef HAVE_QC_SUBMIT_BIO
-blk_qc_t _submit_bio(struct bio *bio)
+blk_qc_t sblkdev_submit_bio(struct bio *bio)
 {
 	blk_qc_t ret = BLK_QC_T_NONE;
 #else
-void _submit_bio(struct bio *bio)
+void sblkdev_submit_bio(struct bio *bio)
 {
 #endif
 #ifdef HAVE_BI_BDEV
@@ -125,10 +132,17 @@ void _submit_bio(struct bio *bio)
 
 #endif /* CONFIG_SBLKDEV_REQUESTS_BASED */
 
-
-static int _open(struct block_device *bdev, fmode_t mode)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,5,0)
+static int sblkdev_open(struct gendisk *disk, fmode_t mode)
+#else
+static int sblkdev_open(struct block_device *bdev, fmode_t mode)
+#endif
 {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,5,0)
+	struct sblkdev_device *dev = disk->private_data;
+#else
 	struct sblkdev_device *dev = bdev->bd_disk->private_data;
+#endif
 
 	if (!dev) {
 		pr_err("Invalid disk private_data\n");
@@ -141,7 +155,11 @@ static int _open(struct block_device *bdev, fmode_t mode)
 	return 0;
 }
 
-static void _release(struct gendisk *disk, fmode_t mode)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,5,0)
+static void sblkdev_release(struct gendisk *disk)
+#else
+static void sblkdev_release(struct gendisk *disk, fmode_t mode)
+#endif
 {
 	struct sblkdev_device *dev = disk->private_data;
 
@@ -154,6 +172,7 @@ static void _release(struct gendisk *disk, fmode_t mode)
 	PRINT_CTX();
 }
 
+// get disk geometry
 static inline int ioctl_hdio_getgeo(struct sblkdev_device *dev, unsigned long arg)
 {
 	struct hd_geometry geo = {0};
@@ -186,7 +205,7 @@ static inline int ioctl_hdio_getgeo(struct sblkdev_device *dev, unsigned long ar
 	return 0;
 }
 
-static int _ioctl(struct block_device *bdev, fmode_t mode, unsigned int cmd, unsigned long arg)
+static int sblkdev_ioctl(struct block_device *bdev, fmode_t mode, unsigned int cmd, unsigned long arg)
 {
 	struct sblkdev_device *dev = bdev->bd_disk->private_data;
 
@@ -203,7 +222,7 @@ static int _ioctl(struct block_device *bdev, fmode_t mode, unsigned int cmd, uns
 }
 
 #ifdef CONFIG_COMPAT
-static int _compat_ioctl(struct block_device *bdev, fmode_t mode, unsigned int cmd, unsigned long arg)
+static int sblkdev_compat_ioctl(struct block_device *bdev, fmode_t mode, unsigned int cmd, unsigned long arg)
 {
 	// CONFIG_COMPAT is to allow running 32-bit userspace code on a 64-bit kernel
 	return -ENOTTY; // not supported
@@ -212,14 +231,14 @@ static int _compat_ioctl(struct block_device *bdev, fmode_t mode, unsigned int c
 
 static const struct block_device_operations fops = {
 	.owner = THIS_MODULE,
-	.open = _open,
-	.release = _release,
-	.ioctl = _ioctl,
+	.open = sblkdev_open,
+	.release = sblkdev_release,
+	.ioctl = sblkdev_ioctl,
 #ifdef CONFIG_COMPAT
-	.compat_ioctl = _compat_ioctl,
+	.compat_ioctl = sblkdev_compat_ioctl,
 #endif
 #ifndef CONFIG_SBLKDEV_REQUESTS_BASED
-	.submit_bio = _submit_bio,
+	.submit_bio = sblkdev_submit_bio,
 #endif
 };
 
@@ -244,24 +263,22 @@ void sblkdev_remove(struct sblkdev_device *dev)
 #ifdef CONFIG_SBLKDEV_REQUESTS_BASED
 	blk_mq_free_tag_set(&dev->tag_set);
 #endif
-	vfree(dev->data);
-
+	kvfree(dev->data);
 	kfree(dev);
-
 	pr_info("simple block device was removed\n");
 }
 
 #ifdef CONFIG_SBLKDEV_REQUESTS_BASED
 static inline int init_tag_set(struct blk_mq_tag_set *set, void *data)
 {
-	set->ops = &mq_ops;
+	set->ops = &mq_ops;	// block driver behavior
 	set->nr_hw_queues = 1;
 	set->nr_maps = 1;
 	set->queue_depth = 128;
 	set->numa_node = NUMA_NO_NODE;
 	set->flags = BLK_MQ_F_SHOULD_MERGE | BLK_MQ_F_STACKING;
 
-	set->cmd_size = 0;
+	set->cmd_size = 0;	// additional bytes to alloc per request
 	set->driver_data = data;
 
 	// 'Alloc a tag set to be associated with one or more request queues.'
@@ -336,41 +353,48 @@ struct sblkdev_device *sblkdev_add(int major, int minor, char *name,
 
 	INIT_LIST_HEAD(&dev->link);
 	dev->capacity = capacity;
-	dev->data = __vmalloc(capacity << SECTOR_SHIFT, GFP_NOIO | __GFP_ZERO);
+	dev->data = kvzalloc(capacity << SECTOR_SHIFT, GFP_KERNEL);
 	if (!dev->data) {
 		ret = -ENOMEM;
 		goto fail_kfree;
 	}
 
 #ifdef CONFIG_SBLKDEV_REQUESTS_BASED
+	// >= 6.8: this seems to be the default approach
+	pr_info("Going via explicit (longer) request-based approach\n");
 	ret = init_tag_set(&dev->tag_set, dev);
 	if (ret) {
 		pr_err("Failed to allocate tag set\n");
-		goto fail_vfree;
+		goto fail_kvfree;
 	}
 
 	/* >=5.14: blk_mq_alloc_disk() is a kernel macro, a wrapper over
-	 * __blk_mq_alloc_disk().
+	 * blk_mq_alloc_queue() and __alloc_disk_node().
 	 * If < 5.14 we have our own implementation of this func...
 	 */
 	disk = blk_mq_alloc_disk(&dev->tag_set, dev);
 	if (unlikely(!disk)) {
 		ret = -ENOMEM;
-		pr_err("Failed to allocate disk\n");
+		pr_err("Failed to allocate disk (1)\n");
 		goto fail_free_tag_set;
 	}
 	if (IS_ERR(disk)) {
 		ret = PTR_ERR(disk);
-		pr_err("Failed to allocate disk\n");
+		pr_err("Failed to allocate disk (2)\n");
 		goto fail_free_tag_set;
 	}
 
 #else
+	pr_info("Going via simpler blk_alloc_queue() and __alloc_disk_node() method\n");
+	/* blk_alloc_disk() is actually a simpler way - wrapper - to get
+	 * the same behavior as above via init_tag_set(), blk_mq_init_queue() &
+	 * alloc_disk() (via our blk_mq_alloc_disk() function)
+	 */
 	disk = blk_alloc_disk(NUMA_NO_NODE);
 	if (!disk) {
 		pr_err("Failed to allocate disk\n");
 		ret = -ENOMEM;
-		goto fail_vfree;
+		goto fail_kvfree;
 	}
 #endif
 	/* Ok, we have the 'disk'; init it ... */
@@ -390,14 +414,14 @@ struct sblkdev_device *sblkdev_add(int major, int minor, char *name,
 	disk->first_minor = minor;
 	disk->minors = 1;
 
-	disk->fops = &fops;
-
+	disk->fops = &fops;	// blk device ops
 	disk->private_data = dev;
 
 	sprintf(disk->disk_name, name);
 	set_capacity(disk, dev->capacity);
 
 #ifdef CONFIG_SBLKDEV_BLOCK_SIZE
+	// true: set to 512
 	blk_queue_physical_block_size(disk->queue, CONFIG_SBLKDEV_BLOCK_SIZE);
 	blk_queue_logical_block_size(disk->queue, CONFIG_SBLKDEV_BLOCK_SIZE);
 	blk_queue_io_min(disk->queue, CONFIG_SBLKDEV_BLOCK_SIZE);
@@ -406,7 +430,7 @@ struct sblkdev_device *sblkdev_add(int major, int minor, char *name,
 	blk_queue_physical_block_size(disk->queue, SECTOR_SIZE);
 	blk_queue_logical_block_size(disk->queue, SECTOR_SIZE);
 #endif
-	blk_queue_max_hw_sectors(disk->queue, BLK_DEF_MAX_SECTORS);
+	blk_queue_max_hw_sectors(disk->queue, BLK_SAFE_MAX_SECTORS);
 	blk_queue_flag_set(QUEUE_FLAG_NOMERGES, disk->queue);
 
 
@@ -443,8 +467,8 @@ fail_put_disk:
 fail_free_tag_set:
 	blk_mq_free_tag_set(&dev->tag_set);
 #endif
-fail_vfree:
-	vfree(dev->data);
+fail_kvfree:
+	kvfree(dev->data);
 fail_kfree:
 	kfree(dev);
 fail:

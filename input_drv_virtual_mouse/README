@@ -2,6 +2,9 @@ Virtual Mouse !
 (from the ELDD, Venkateswaran book!)
 
 To try this out:
+Simply run the Bash test script : test_vmouse
+
+-OR- (step-by-step):
 
 1. Build & insmod
 make

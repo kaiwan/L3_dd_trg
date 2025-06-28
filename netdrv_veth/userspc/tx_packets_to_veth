@@ -1,5 +1,8 @@
 #!/bin/bash
-# runapp
+# tx_packets_to_veth
+# Part of the 'veth' NIC app/driver prj
+# Run this via the helper script
+#  run_and_capture_pkt
 name=$(basename $0)
 
 trap 'echo "${name}: terminating ..." ; pkill runapp' INT QUIT EXIT 
@@ -18,6 +21,11 @@ which ifconfig >/dev/null 2>&1 || {
   echo "ifconfig not installed? Pl install & retry"
   exit 1
 }
+[[ $# -ne 1 ]] && {
+  echo "Usage: ${name} number-of-packets-to-tx"
+  exit 1
+}
+NUM2TX=$1
 
 # Look for the first ethernet intf to come up this boot (we'll want it's IP addr)
 # It's often 'renamed', look for that and extract the intf name
@@ -37,7 +45,8 @@ if [[ -z "${FIRST_INTF}" ]] ; then
 fi
 ip link |grep "${FIRST_INTF}.*UP" >/dev/null
 [[ $? -ne 0 ]] && {
-  echo "${name}: error with interface ${FIRST_INTF}? shows as not being UP" ; exit 1
+  echo "${name}: warning: issue with interface ${FIRST_INTF}? shows as not being UP"
+  #exit 1
 }
 IP_FIRST_INTF=$(getIP ${FIRST_INTF})
 #echo "FIRST_INTF=${FIRST_INTF} IP_FIRST_INTF=${IP_FIRST_INTF}"
@@ -75,5 +84,5 @@ sudo pkill ${TALKER}
 echo "${name}: running talker process..."
 MSG="hey, ${INTF}, wassup"
 [ -x ${TALKER} ] && {
-  sudo ./${TALKER} ${DEST_IP_VETH} "${MSG}"
+  sudo ./${TALKER} ${DEST_IP_VETH} "${MSG}" ${NUM2TX}
 }

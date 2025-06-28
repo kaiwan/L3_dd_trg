@@ -1,5 +1,8 @@
 #!/bin/bash
 # Helper to load the 'laser presenter' module along with key mappings as desired
+#
+# TODO / RELOOK:
+# requires rebuild & reinstall on every OS update.. need to use DKMS (Dyn Kernel Module Support)
 name=$(basename $0)
 
 KMOD=laserp
@@ -134,7 +137,7 @@ lsmod|grep ${MY_DRIVER} >/dev/null || {
      ls /lib/modules/$(uname -r)/extra/${MY_DRIVER}.ko* >/dev/null 2>&1 && NOT_INSTALLED=0
   }
   [[ ${NOT_INSTALLED} -eq 1 ]] && (cd ${MY_DRIVER_LOC} ; sudo make install)
-  sudo modprobe ${MY_DRIVER} ${KMOD_PARAMS} || die "modprobe ${MY_DRIVER} failed? Insert your \"${MY_DRIVER}\" driver first and retry"
+  sudo modprobe ${MY_DRIVER} ${KMOD_PARAMS} || die "modprobe ${MY_DRIVER} failed? Install your \"${MY_DRIVER}\" driver first and retry"
 }
 echo "Running the 'rebind' script ..."
 ${MY_DRIVER_LOC}/rebind

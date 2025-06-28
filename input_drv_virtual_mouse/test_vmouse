@@ -1,0 +1,40 @@
+#!/bin/bash
+KDRV=input_drv_mouse
+
+die() {
+echo >&2 "FATAL: $*" ; exit 1
+}
+
+run_test()
+{
+  local INPUT_DEV=$(ls -t -1 /dev/input/event* |head -n1)
+  [[ -z "${INPUT_DEV}" ]] && die "couldn't get input device" || echo "input device is ${INPUT_DEV}"
+  if [[ ! -f coord_gen ]] ; then
+     make coord_gen || exit 1
+  fi
+  echo "Running coord_gen & (which writes random (x,y) to /sys/devices/platform/vms/vms for 6 sec...)"
+  timeout 6 ./coord_gen &
+  echo "Running /usr/bin/evtest for 5 sec..."
+  timeout 5 /usr/bin/evtest ${INPUT_DEV}
+  rmmod ${KDRV}
+}
+
+build_load_kmod()
+{
+  if [[ ! -f ${KDRV}.ko ]] ; then
+    make || exit 1
+  fi
+  ${KDRV} 2>/dev/null
+  dmesg -C
+  insmod ${KDRV}.ko || exit 1
+  dmesg
+}
+
+#--- 'main'
+hash evtest || die "Pl install the evtest package first"
+[[ $(id -u) -ne 0 ]] && die "must run as root"
+lsmod |grep ${KDRV} >/dev/null && run_test || {
+  build_load_kmod
+  run_test
+}
+exit 0

@@ -20,9 +20,24 @@
 
 /*
  * Init & exit stuff
- */
+
+ Don't name it time_init()! <--- namespace collision!
+ Got this err on build:
+ ...
+ error: conflicting types for ‘time_init’; have ‘int(void)’
+   25 | static int __init time_init(void)
+      |                   ^~~~~~~~~
+In file included from /usr/src/linux-headers-6.6.51+rpt-common-rpi/arch/arm64/include/asm/alternative.h:9,
+		-- snip --
+                 from /usr/src/linux-headers-6.6.51+rpt-common-rpi/include/linux/module.h:13,
+                 from /home/pi/kaiwanTECH/L3_dd_trg/ktime_stuff/time_lld_cookbk/time.c:7:
+/usr/src/linux-headers-6.6.51+rpt-common-rpi/include/linux/init.h:154:6: note: previous declaration of ‘time_init’ with type ‘void(void)’
+  154 | void time_init(void);
+      |      ^~~~~~~~~
 
 static int __init time_init(void)
+ */
+static int __init delays_sleeps_init(void)
 {
 	/* Atomic, busy-loops, no sleep! */
     pr_info("*delay() functions (atomic, in a delay loop):\n");
@@ -54,13 +69,13 @@ static int __init time_init(void)
      */
 }
 
-static void __exit time_exit(void)
+static void __exit delays_sleeps_exit(void)
 {
     pr_info("unloaded\n");
 }
 
-module_init(time_init);
-module_exit(time_exit);
+module_init(delays_sleeps_init);
+module_exit(delays_sleeps_exit);
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Rodolfo Giometti");

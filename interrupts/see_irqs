@@ -22,9 +22,10 @@ echo "Detected GUI mode as ${GUI_MODE}"
    GUI_MODE=0  # -c: console mode
 }
 
+TIME_INTV=0.1  # seconds
 PROMPT="[Enter] to continue and then ^C to abort..."
-title1="Watch : /proc/interrupts : every 1s"
-cmd1="watch -n1 -d \"cat /proc/interrupts\""
+title1="Watch : /proc/interrupts : every ${TIME_INTV}s"
+cmd1="watch -n${TIME_INTV} -d \"cat /proc/interrupts\""
 if [[ ${GUI_MODE} -eq 1 ]] ; then
    echo "GUI mode"
    lxterminal --working-directory=${HOME}/ --command="${cmd1}" --title="${title1}" --geometry=1600x750 &
@@ -34,7 +35,7 @@ else
 fi
 
 title2="Watch : /proc/softirqs : every 1s"
-cmd2="watch -n1 -d \"cat /proc/softirqs\""
+cmd2="watch -n${TIME_INTV} -d \"cat /proc/softirqs\""
 if [[ ${GUI_MODE} -eq 1 ]] ; then
    lxterminal --working-directory=${HOME}/ --command="${cmd2}" --title="${title2}" --geometry=1200x350 &
 else

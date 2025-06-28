@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: GPL-2.0
-
-#define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
+#define pr_fmt(fmt) "%s:%s(): " fmt, KBUILD_MODNAME, __func__
 
 #include <linux/module.h>
 #include "device.h"
 
+/* Ref: GCC diagnostic pragmas:
+ * https://gcc.gnu.org/onlinedocs/gcc/Diagnostic-Pragmas.html
+ */
 #ifdef CONFIG_SBLKDEV_REQUESTS_BASED
 #pragma message("Request-based scheme selected.")
 #else

@@ -34,6 +34,8 @@ MODULE_LICENSE("Dual MIT/GPL");
 #define DRVNAME  "platdemo"
 /*------------------------ Structs, prototypes, .. ------------------*/
 static int platdev_probe(struct platform_device *);
+
+// From 6.11, use the remove_new hook (until it's converted back); see commit #0edb555a65d1ef
 #if LINUX_VERSION_CODE < KERNEL_VERSION(6, 11, 0)
 static int platdev_remove(struct platform_device *);
 #else
@@ -43,17 +45,20 @@ static void plat0_release(struct device *);
 
 /* Platform Device */
 static struct platform_device plat0 = {
-#if 1				/* Make 1 to test using different names in the platform device and driver;
-				 * We find that the driver core then can't bind them, and the probe method
-				 * is never invoked...
-				 */
+#if 1		/*
+		 * Make 0 to test using different names in the platform device
+		 * and driver.
+		 * We find that unless the name given here *precisely* matches
+		 * the name provided in the platform_driver structure, the driver
+		 * core can't bind them, and the probe method is never invoked...
+		 */
 	.name = "splat",	// oops, bad name...!
 	/* ... But then again, we can use the 'driver_override' member to force
 	 * a match to the driver's name! Then it still works..
 	 */
 	.driver_override = DRVNAME,	/* Driver name to force a match! */
 #else
-	.name = DRVNAME,
+	.name = "wrong_name",
 #endif
 	.id = 0,
 	.dev = {
@@ -155,18 +160,31 @@ static int __init platdev_init(void)
 	plat0.dev.platform_data = priv;	// convenient to access later
 	pr_info("data_xform value = %d\n", priv->data_xform);
 
-	/* Here, we're simply 'manually' adding a platform device (old-style)
+	/*
+	 * Here, we're simply 'manually' adding a platform device (old-style)
 	 * via the platform_add_devices() API, which is a wrapper over
 	 * platform_device_register().
-	 * (The preferred modern way is to do so via the DT; here, the DT devices
-	 * are generated as platform devices by the kernel at early boot)
+	 * The preferred modern way is to do so via the Device Tree (DT)! In
+	 * this (modern) approach, the DT devices are auto-generated as platform
+	 * devices by the kernel at early boot
 	 */
 	res = platform_add_devices(platdemo_platform_devices,
 				   ARRAY_SIZE(platdemo_platform_devices));
 	if (res) {
-		pr_warn("platform_add_devices failed!\n");
+		pr_warn("platform_add_devices() failed!\n");
 		goto out_fail_pad;
 	}
+
+	/*
+	 * As stated: (V IMP!)
+	 * - In the init code: the client driver (us) must register itself to
+	 * an appropriate bus driver (infrastructure) as it relies upon it
+	 * - When recognized as a driver capable of driving a device that’s
+	 * become visible (or has already been visible), the kernel bus driver
+	 * invokes the client’s driver probe() method
+	 * - In probe(), it could register itself to some existing kernel
+	 * framework
+	 */
 
 	// Register ourself with the platform bus driver, as we're a platform device
 	res = platform_driver_register(&platdrv);

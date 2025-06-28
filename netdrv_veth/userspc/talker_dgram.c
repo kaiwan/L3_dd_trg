@@ -86,9 +86,8 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "%s: need to run as root.\n", argv[0]);
 		exit(1);
 	}
-	if (argc != 3) {
-		fprintf(stderr, "usage: %s DEST-IP-address message\n", argv[0]);
-		//fprintf(stderr,"usage: %s interface-to-bind-to DEST-IP-address message\n", argv[0]);
+	if (argc != 4) {
+		fprintf(stderr, "Usage: %s DEST-IP-address message number-of-packets-to-transmit\n", argv[0]);
 		exit(1);
 	}
 
@@ -108,9 +107,9 @@ int main(int argc, char *argv[])
 	printf("%s: successfully bound to interface '%s'\n", argv[0],
 	       INTF_NAME);
 #endif
-	i = 1;
-	while (1) {
-		if (send_pkt(i++, sockfd, argv[1], argv[2]) == -1) {
+	for (i = 0; i < atoi(argv[3]); i++) {
+	//while (1) {
+		if (send_pkt(i, sockfd, argv[1], argv[2]) == -1) {
 			fprintf(stderr, "%s: send_pkt failed, aborting.\n",
 				argv[0]);
 			close(sockfd);

@@ -13,6 +13,7 @@ module to make it easier for beginners (and myself) to study the block layer.
 
 Features:
  * Compatible with Linux kernel from 5.10 to 6.0.
+ 	* 6.8.y - tested on x86_64 Ubuntu 24.04 and Fedora 38 only
  * Allows to create bio-based and request-based block devices.
  * Allows to create multiple block devices.
  * The Linux kernel code style is followed (checked by checkpatch.pl).
@@ -40,6 +41,48 @@ rpm:
 
 * Uninstall module
 	`cd ${HOME}/sblkdev; ./mk.sh uninstall`
+
+---
+**Alternate: Steps to test:**
+
+- `./mk.sh build`
+- `sudo ./loadblk.sh`
+
+*< Now partition setup and format of the (pseudo) disk follows >*
+
+'fdisk /dev/sblkdev1' will now run..
+
+Apply these commands in this order:
+
+`n      : New partition`
+
+`p      : type Primary  [Enter]`
+
+`1      : partition # 1 [Enter]`
+
+`1      : First sector (1-2047, default 1): [Enter]`
+
+`2047   : Last sector, +/-sectors or +/-size{K,M,G,T,P} (1-2047, default 2047): [Enter]`
+
+`w      : write partition table`
+
+(*Tip:* Just pressing `[Enter]` typically has the correct defaults setup)
+
+It might now ask:
+
+"Found a dos partition table in /dev/sblkdev1
+
+Proceed anyway? (y,N) "
+
+Type `y`
+
+- `./blkdrv_tester.sh`
+
+(This script fires off some disk IO, sleeps for a few seconds, then issues a `sync`. 
+
+*Tip:* keep another terminal window open where you can watch the kernel log as it unfolds; to do so, try :
+`journalctl -kf`
+).
 
 ---
 Feedback is welcome.

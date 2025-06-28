@@ -5,8 +5,9 @@
  *
  * Setup a bare-bones platform device & associated driver.
  * Platform devices get bound to their driver simply on the basis of the 'name'
- * field; if they match, the driver core "binds" them, invoking the 'probe'
- * routine. Conversely, the 'remove' method is invoked at unload/shutdown.
+ * field; if they match, the platform bus driver core "binds" them, invoking
+ * the 'probe' routine. Conversely, the 'remove' method is invoked at
+ * unload/shutdown.
  *
  * License: Dual MIT/GPL
  * Kaiwan NB <kaiwan -at- kaiwantech -dot- com>
@@ -26,7 +27,7 @@
 #include "../../convenient.h"
 
 MODULE_DESCRIPTION
-    ("Simple demo platform driver; can use as a template for a platform device/driver");
+("Simple demo platform driver; can use as a template for a platform device/driver");
 MODULE_AUTHOR("Kaiwan N Billimoria");
 MODULE_LICENSE("Dual MIT/GPL");
 
@@ -98,7 +99,7 @@ struct stMyCtx {
 	int tx_bytes, rx_bytes;
 	unsigned int data_xform;
 	//spinlock_t lock;
-	//mutex mutex;
+	//mutex mtx;
 };
 
 /*--------------------------------------------------------------------*/
@@ -149,6 +150,7 @@ static int __init platdev_init(void)
 	if (!pstCtx)
 		return -ENOMEM;
 	plat0.dev.platform_data = pstCtx;	// convenient to access later
+	pr_info("data_xform value = %d\n", pstCtx->data_xform);
 
 	/* Here, we're simply 'manually' adding a platform device (old-style)
 	 * via the platform_add_devices() API, which is a wrapper over
@@ -180,7 +182,8 @@ static int __init platdev_init(void)
 	 * $ cat /sys/devices/platform/splat.0/modalias        
 	 * platform:splat
 	 */
-	dev_dbg(&plat0.dev, "loaded.\n");
+	pr_info("loaded\n");
+
 	return res;
 
  out_fail_pdr:

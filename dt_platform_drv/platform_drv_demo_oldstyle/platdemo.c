@@ -92,8 +92,11 @@ static struct platform_driver platdrv = {
 		   },
 };
 
-/* Most drivers have a global "context" struct that gets passed around .. */
-struct stMyCtx {
+/*
+ * Most drivers have a global "private" or "context" data structure that holds
+ * all state info and gets passed around ..
+ */
+struct platdemo_private {
 	//struct net_device *netdev; // or whichever appropriate 'specialized' by-type structure
 	int txpktnum, rxpktnum;
 	int tx_bytes, rx_bytes;
@@ -107,13 +110,13 @@ struct stMyCtx {
 static int platdev_probe(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
-	struct stMyCtx *pstCtx = dev_get_platdata(dev);
+	struct platdemo_private *priv = dev_get_platdata(dev);
 	/* could have done the above directly with:
-	 *  ... *pstCtx = pdev->dev.platform_data;
+	 *  ... *priv = pdev->dev.platform_data;
 	 * but using the kernel helper is recommended
 	 */
 
-	pstCtx->data_xform = 100;
+	priv->data_xform = 100;
 	dev_dbg(dev, "platform drv probe method invoked! implies name match\n\
 setting data_xform to 100\n");
 	return 0;
@@ -126,9 +129,9 @@ static void platdev_remove(struct platform_device *pdev)
 #endif
 {
 	struct device *dev = &pdev->dev;
-	struct stMyCtx *pstCtx = dev_get_platdata(dev);
+	struct platdemo_private *priv = dev_get_platdata(dev);
 
-	dev_dbg(dev, "remove method invoked\n data_xform=%d\n", pstCtx->data_xform);
+	dev_dbg(dev, "remove method invoked\n data_xform=%d\n", priv->data_xform);
 #if LINUX_VERSION_CODE < KERNEL_VERSION(6, 11, 0)
 	return 0;
 #endif
@@ -142,15 +145,15 @@ static void plat0_release(struct device *dev)
 static int __init platdev_init(void)
 {
 	int res = 0;
-	struct stMyCtx *pstCtx = NULL;
+	struct platdemo_private *priv = NULL;
 
 	pr_info("Initializing platform demo driver now...\n");
 
-	pstCtx = kzalloc(sizeof(struct stMyCtx), GFP_KERNEL);
-	if (!pstCtx)
+	priv = kzalloc(sizeof(struct platdemo_private), GFP_KERNEL);
+	if (!priv)
 		return -ENOMEM;
-	plat0.dev.platform_data = pstCtx;	// convenient to access later
-	pr_info("data_xform value = %d\n", pstCtx->data_xform);
+	plat0.dev.platform_data = priv;	// convenient to access later
+	pr_info("data_xform value = %d\n", priv->data_xform);
 
 	/* Here, we're simply 'manually' adding a platform device (old-style)
 	 * via the platform_add_devices() API, which is a wrapper over
@@ -189,20 +192,20 @@ static int __init platdev_init(void)
  out_fail_pdr:
 	platform_device_unregister(&plat0);
  out_fail_pad:
-	kfree(pstCtx);
+	kfree(priv);
 	return res;
 }
 
 static void __exit platdev_exit(void)
 {
 	struct device *dev = &plat0.dev;
-	struct stMyCtx *pstCtx = dev_get_platdata(dev);
-	//struct stMyCtx *pstCtx = plat0.dev.platform_data;
+	struct platdemo_private *priv = dev_get_platdata(dev);
+	//struct platdemo_private *priv = plat0.dev.platform_data;
 
 	dev_dbg(dev, "unloading\n");
 	platform_driver_unregister(&platdrv);
 	platform_device_unregister(&plat0);
-	kfree(pstCtx);
+	kfree(priv);
 }
 
 module_init(platdev_init);

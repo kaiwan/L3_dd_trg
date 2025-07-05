@@ -11,7 +11,9 @@
  * (The node name doesn't matter; it's the *compatible* property that matches
  *  with the same in this driver!):
  *
+ * ---------------------------------------------
  * F.e. for the Raspberry Pi 4B:
+ * ---------------------------------------------
  * in rpi4b_dtb_stuff/rpi4b_gen.dts :
  * ...
  * soc {
@@ -44,7 +46,7 @@
  * ---------------------------------------------
  * For the BBB - Beagle Bone Black
  * ---------------------------------------------
- * 1. Setup the DTBO to get oarsed at boot:
+ * 1. Setup the DTBO to get parsed at boot:
  *    - Will have to boot via eMMC internal flash (as the /boot stuff's there)
  *    - compile the DTS to the DTBO (DT overlay blob)
  *    - copy it into the appropriate location: /boot/dtbs/5.10.168-ti-r79/overlays/BB-BONE-DTDEMO-01.dtbo
@@ -94,8 +96,6 @@
 #include <linux/delay.h>
 #include <linux/of.h>   // of_* APIs (OF = Open Firmware!)
 
-#define DRVNAME "dtdemo_platdrv"
-
 MODULE_LICENSE("Dual MIT/GPL");
 MODULE_AUTHOR("Kaiwan N Billimoria");
 MODULE_DESCRIPTION(
@@ -143,12 +143,18 @@ int dtdemo_platdev_probe(struct platform_device *pdev)
 	return 0;
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 11, 0)
 int dtdemo_platdev_remove(struct platform_device *pdev)
+#else
+void dtdemo_platdev_remove(struct platform_device *pdev)
+#endif
 {
 	struct device *dev = &pdev->dev;
 
 	dev_dbg(dev, "platform driver remove\n");
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 11, 0)
 	return 0;
+#endif
 }
 
 #ifdef CONFIG_OF
@@ -172,7 +178,7 @@ static struct platform_driver my_platform_driver = {
 	.driver = {
 		.name = "dtdemo_platdev",
 		/* platform driver name must
-		 * EXACTLY match the DT 'compatible' property - described in the DT
+		 * EXACTLY match the DT 'compatible' property - described in the DT [overlay]
 		 * for the board - for binding to occur;
 		 * then, this module is loaded up and it's probe method invoked!
 		 */

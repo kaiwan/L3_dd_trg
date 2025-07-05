@@ -26,5 +26,5 @@ fdtdump ${dtbfile} > fdtdump_out.txt && {
 
 # ref: https://stackoverflow.com/a/39931834/779269
 # For convenience, can add in your ~/.bashrc:
-# dtbs() ( dtc -@ -I dtb -O dts -o - "$1" )
-# dtsb() ( dtc -I dts -O dtb -o - "$1" )
+# dtb2dts() ( dtc -@ -I dtb -O dts -o - "$1" )
+# dts2dtb() ( dtc -I dts -O dtb -o - "$1" )

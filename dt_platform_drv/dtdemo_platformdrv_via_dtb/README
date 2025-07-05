@@ -9,7 +9,7 @@
 2. For the TI Beagle Bone Black board:
  * ---------------------------------------------
  * 1. Setup the DTBO to get parsed at boot:
- *    - Can boot from either the eMMC internal flash or the uSD card.. butmthen must
+ *    - Can boot from either the eMMC internal flash or the uSD card.. but then must
  *      accordingly supply the correct pathnames for the DTBO file of course
  *    - compile the DTS (in bbb_dtb_stuff/) to the DTBO (DT overlay blob)
  *    - copy it into the appropriate location; on the internal flash it's:
@@ -30,7 +30,7 @@
  *    $ cat /proc/device-tree/my_device/compatible
 dtdemo,dtdemo_platdev
  * 4. Compile and run the driver; the probe method gets called, proving it worked!
- *    sudo insmod ././dtdemo_platdrv.ko
+ *    make && sudo insmod ./dtdemo_platdrv.ko
  *    dmesg
  *    ...
  *    [  185.450304] dtdemo_platdrv:dtdemo_platdrv_init(): inserted
@@ -41,7 +41,7 @@ dtdemo,dtdemo_platdev
 
 [OLDER way]
 - Require to generate a DT overlay here, and load it via U-Boot (only)
-- Have done so using a s very simple DT overlay DTS file (bbb_dtb_stuff/dtdemo_overlay.dts)
+- Have done so using a very simple DT overlay DTS file (bbb_dtb_stuff/dtdemo_overlay.dts)
   and generate the DTBO like this:
   dtc -I dts -@ -O dtb -o dtdemo_overlay.dtbo dtdemo_overlay.dts
 - Difficult to test directly on the default BBB Debian OS; so, have used Michael Opdenacker's

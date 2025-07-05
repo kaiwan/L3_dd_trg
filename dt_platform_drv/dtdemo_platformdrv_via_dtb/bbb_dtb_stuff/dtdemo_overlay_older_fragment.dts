@@ -10,6 +10,14 @@
         };
 };
 
+/*
+ * This particular DTB Overlay uses the OLDER-style 'fragment' approach..
+ * It's NOT recommended; the modern 'correct' approach is one where the overlay
+ * target location is explicitly specified by label. Refer this example:
+ *  https://github.com/kaiwan/drv_johannes/tree/main/20_dt_probe
+ *
+ * This one too does work though...
+ */
 / {
 	compatible = "ti,am335x-bone-black", "ti,am335x-bone", "ti,am33xx";
 	fragment@0 {

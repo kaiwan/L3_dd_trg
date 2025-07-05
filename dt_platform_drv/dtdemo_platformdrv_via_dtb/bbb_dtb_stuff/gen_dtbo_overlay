@@ -1,1 +1,1 @@
-dtc -@ -I dts ./dtdemo_overlay.dts -O dtb -o BB-BONE-DTDEMO-01.dtbo
+dtc -@ -I dts ./dtdemo_overlay_older_fragment.dts -O dtb -o BB-BONE-DTDEMO-01.dtbo

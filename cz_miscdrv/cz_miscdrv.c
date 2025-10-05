@@ -71,6 +71,7 @@ static ssize_t czero_read(struct file *filp, char __user *buf,
 	    current->comm, current->pid, count);
 
 	if (copy_to_user(buf, zbuf, count)) {
+		// return -EFAULT; // pl DON'T ! causes a leak!
 		status = -EFAULT;
 		goto out_copy_err;
 	}

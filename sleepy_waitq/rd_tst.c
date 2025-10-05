@@ -56,7 +56,7 @@ int main(int argc, char **argv)
 		perror("sigaction"); exit(1);
 	}
 
-	fd = open(argv[1], FLGS, DMODE)
+	fd = open(argv[1], FLGS, DMODE);
 	if (fd == -1)
 		perror("open"), exit(1);
 	printf("device opened: fd=%d\n", fd);

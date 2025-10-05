@@ -6,7 +6,7 @@
  * Uses the 'misc' char driver framework.
  *
  * Author: Kaiwan N Billimoria
- * License: Dual GPL/MIT
+ * License: Dual GPLv2/MIT
  */
 #define pr_fmt(fmt) "%s:%s(): " fmt, KBUILD_MODNAME, __func__
 
@@ -56,7 +56,7 @@ static ssize_t sleepy_read(struct file *filp, char __user *buf, size_t count, lo
 			//return -ERESTARTSYS; // old way
 		}
 		/*
-		 * Blocks here..the reader (user context) process is put to sleep;
+		 * Blocks here..the reader (user context) process/thread is put to sleep;
 		 * this is actually effected by making the
 		 * task state <- TASK_INTERRUPTIBLE and invoking the scheduler.
 		 */
@@ -64,7 +64,9 @@ static ssize_t sleepy_read(struct file *filp, char __user *buf, size_t count, lo
 			 current->pid, current->comm, atomic_read(&data_present));
 	}
 	pr_debug("%d (%s): Data is available, proceeding...\n", current->pid, current->comm);
-	/* Actual read work done here (in a 'real' driver)... */
+	/* Actual read work done here (in a 'real' driver)... 
+	 * Perhaps with a mutex to avoid the 'thundering herd' issue..
+	 */
 
 	return count;
 }

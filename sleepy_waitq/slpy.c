@@ -31,6 +31,11 @@
 static atomic_t data_present = ATOMIC_INIT(0);	/* event condition flag */
 DECLARE_WAIT_QUEUE_HEAD(wq);
 
+static int exclusive_wakeup;
+module_param(exclusive_wakeup, int, 0);
+MODULE_PARM_DESC(exclusive_wakeup, "set this to 1 to perform exclusive waiter/wakeups (only 1 sleeper will be awoken at a time);"
+"default (0) is that all sleepers are awoken immd");
+
 MODULE_AUTHOR("Kaiwan");
 MODULE_DESCRIPTION("Trivial demo of using a wait queue");
 MODULE_LICENSE("GPL/MIT");
@@ -50,11 +55,21 @@ static ssize_t sleepy_read(struct file *filp, char __user *buf, size_t count, lo
 	 */
 	while (atomic_read(&data_present) == 0) {
 		pr_debug("process %d (%s) going to sleep\n", current->pid, current->comm);
-		if (wait_event_interruptible(wq, (atomic_read(&data_present) == 1))) {
-			pr_debug("wait interrupted by signal, ret -ERESTARTSYS to VFS..\n");
-			return -EINTR;
-			//return -ERESTARTSYS; // old way
+
+		if (exclusive_wakeup == 1) {
+			if (wait_event_interruptible_exclusive(wq, (atomic_read(&data_present) == 1))) {
+				pr_debug("wait interrupted by signal, ret -ERESTARTSYS to VFS..\n");
+				return -EINTR;
+				//return -ERESTARTSYS; // old way
+			}
+		} else {
+			if (wait_event_interruptible(wq, (atomic_read(&data_present) == 1))) {
+				pr_debug("wait interrupted by signal, ret -ERESTARTSYS to VFS..\n");
+				return -EINTR;
+				//return -ERESTARTSYS; // old way
+			}
 		}
+
 		/*
 		 * Blocks here..the reader (user context) process/thread is put to sleep;
 		 * this is actually effected by making the
@@ -114,7 +129,10 @@ static int __init miscdrv_rdwr_init(void)
 	/* Retrieve the device pointer for this device */
 	dev = slpy_miscdev.this_device;
 	dev_info(dev, "'sleepy' misc driver (major # 10) registered, minor# = %d,"
-		" dev node is /dev/%s\n", slpy_miscdev.minor, slpy_miscdev.name);
+		" dev node is /dev/%s\n"
+		" exclusive waiter/wakeup? %s\n",
+		slpy_miscdev.minor, slpy_miscdev.name,
+		(exclusive_wakeup==1?"yes":"no"));
 
 	return 0;		/* success */
 }

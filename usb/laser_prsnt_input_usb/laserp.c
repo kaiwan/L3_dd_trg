@@ -134,7 +134,7 @@ Seems to Require that inputX is READ by something/anything, then it works..
 	 * pressed/moved to the input layer
 	 *
 	 * The third param to input_report_key() is a Bool; when True the event
-	 * is reported.. so here, f.e., we report that the ;aser device's top-rt
+	 * is reported.. so here, f.e., we report that the laser device's top-rt
 	 * button has been pressed when data[3] == 0x4e ; this is as this is
 	 * empirically seen to be the case! Likewise with the other buttons...
 	 */
@@ -338,11 +338,11 @@ static int usb_laserpdl_open(struct input_dev *dev)
 	laserpdl = input_get_drvdata(dev);
 	if (!laserpdl) {
 		pr_info("no laserpdl\n");
-		return -1;
+		return -ENODEV;
 	}
 	if (!laserpdl->usbdev) {
 		pr_info("no laserpdl->usbdev\n");
-		return -1;
+		return -ENODEV;
 	}
 	if (!laserpdl->irq_urb) {
 		pr_info("No laserpdl->irq_urb\n");
@@ -385,13 +385,13 @@ static struct usb_device_id dev_table[] = {
 	{USB_DEVICE(USB_PROMODISPLAYTECH_VID, USB_PROMODISPLAYTECH_PID)},
 	{}
 };
-
 MODULE_DEVICE_TABLE(usb, dev_table);
+
 static struct usb_driver laserpdl_driver = {
 	.name = "laserp",
 	.id_table = dev_table,
-	.probe = dev_probe,
-	.disconnect = dev_disconnect
+	.probe = dev_probe,  /* auto-invoked by the USB bus driver as soon as
+			      * the device is detected */
+	.disconnect = dev_disconnect  // ... ditto when disconnected
 };
-
 module_usb_driver(laserpdl_driver);

@@ -51,6 +51,9 @@ struct device_attribute {
 };
 */
 
+/* We're emulating the virtual mouse's interrupt here; we report the relative
+ * mouse movement by sending x,y coordinate values to the input core above us
+ */
 static ssize_t vms_store(struct device *dev,
 			 struct device_attribute *attr, const char *buf, size_t count)
 {
@@ -60,7 +63,7 @@ static ssize_t vms_store(struct device *dev,
 	 * A userspace process - coord_gen - is emulating our virtual mouse
 	 * movements by continually (once/sec) writing (x,y,z) (random) coordinates
 	 * to us; they arrive in 'buf'. Read them in and process (we ignore the 'z'
-	 * value (always 0))
+	 * value as it's always set to 0)
 	 */
 	sscanf(buf, "%d%d", &x, &y);
 	dev_dbg(dev, "%s(): count=%zu; (%d, %d) reported up\n", __func__, count, x, y);
@@ -144,7 +147,7 @@ static int __init input_drv_vmouse_init(void)
 {
 	int stat = 0;
 
-	if (unlikely(!IS_ENABLED(CONFIG_SYSFS))) {
+	if (unlikely(!IS_ENABLED(CONFIG_SYSFS))) {	// paranoia
 		pr_warn("sysfs unsupported! Aborting ...\n");
 		return -EINVAL;
 	}
@@ -202,7 +205,9 @@ static int __init input_drv_vmouse_init(void)
 	vms_input_dev->name = "virtual mouse (vms)";
 	vms_input_dev->phys = "virtual/input0";
 
-	/* Announce that the virtual mouse will generate relative coordinates */
+	/* Set input device capabilities; announce that the virtual mouse
+	 * will generate relative coordinates
+	 */
 	set_bit(EV_REL, vms_input_dev->evbit);
 	/* declare the event codes that our virt mouse produces */
 	set_bit(REL_X, vms_input_dev->relbit);	// rel 'x' movement

@@ -238,7 +238,9 @@ static ssize_t cnul_write(struct file *filp, const char __user * buf,
 
 /* The 'null' device as a char 'misc' device */
 static const struct file_operations cz_cnul_misc_fops = {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 0, 0) // commit 868941b
 	.llseek = no_llseek,
+#endif
 	.read = cnul_read,
 	.write = cnul_write,
 };
@@ -253,7 +255,9 @@ static struct miscdevice cz_cnul_miscdev = {
 
 /* The 'zero' device as a char 'misc' device */
 static const struct file_operations cz_czero_misc_fops = {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 0, 0) // commit 868941b
 	.llseek = no_llseek,
+#endif
 	.read = czero_read,
 	.write = czero_write,
 };

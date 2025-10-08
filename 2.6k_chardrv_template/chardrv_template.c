@@ -42,7 +42,9 @@ struct class *chardrv_class;
 
 /* Minor-specific open routines */
 static const struct file_operations drv_fops = {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 0, 0) // commit 868941b
 	.llseek = no_llseek,
+#endif
 	/* Add char device f_ops above this line */
 };
 

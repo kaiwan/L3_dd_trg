@@ -108,7 +108,9 @@ static ssize_t sleepy_write(struct file *filp, const char __user *buf,
 
 static struct file_operations sleepy_fops = {
 	.owner = 	THIS_MODULE,
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 0, 0) // commit 868941b
 	.llseek = 	no_llseek,
+#endif
 	.read = 	sleepy_read,
 	.write = 	sleepy_write,
 };

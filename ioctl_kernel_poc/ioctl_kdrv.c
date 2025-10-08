@@ -98,7 +98,9 @@ power=%d now.\n", power);
 }
 
 static struct file_operations iok_fops = {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 0, 0) // commit 868941b
 	.llseek = no_llseek,
+#endif
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,36)
 	.unlocked_ioctl = iok_ioctl,	// use the 'unlocked' version!
 	//.compat_ioctl  =      iok_ioctl,

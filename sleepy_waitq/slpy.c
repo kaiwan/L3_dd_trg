@@ -104,7 +104,9 @@ static ssize_t sleepy_write(struct file *filp, const char __user *buf,
 static const struct file_operations slpy_misc_fops = {
 	.read = sleepy_read,
 	.write = sleepy_write,
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 0, 0) // commit 868941b
 	.llseek = no_llseek,	// dummy, we don't support lseek(2)
+#endif
 };
 
 static struct miscdevice slpy_miscdev = {

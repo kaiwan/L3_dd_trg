@@ -58,13 +58,13 @@ static ssize_t sleepy_read(struct file *filp, char __user *buf, size_t count, lo
 
 		if (exclusive_wakeup == 1) {
 			if (wait_event_interruptible_exclusive(wq, (atomic_read(&data_present) == 1))) {
-				pr_debug("wait interrupted by signal, ret -ERESTARTSYS to VFS..\n");
+				pr_debug("wait interrupted by signal, ret -EINTR to VFS..\n");
 				return -EINTR;
 				//return -ERESTARTSYS; // old way
 			}
 		} else {
 			if (wait_event_interruptible(wq, (atomic_read(&data_present) == 1))) {
-				pr_debug("wait interrupted by signal, ret -ERESTARTSYS to VFS..\n");
+				pr_debug("wait interrupted by signal, ret -EINTR to VFS..\n");
 				return -EINTR;
 				//return -ERESTARTSYS; // old way
 			}

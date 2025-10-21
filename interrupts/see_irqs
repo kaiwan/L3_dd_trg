@@ -26,6 +26,9 @@ TIME_INTV=0.1  # seconds
 PROMPT="[Enter] to continue and then ^C to abort..."
 title1="Watch : /proc/interrupts : every ${TIME_INTV}s"
 cmd1="watch -n${TIME_INTV} -d \"cat /proc/interrupts\""
+# On platforms where there are too many IRQs to see on a single screen (like
+# the PocketBeagle 2, for one, can try a command like this:
+#  watch -n.1 -d "sort -k6 /proc/interrupts"
 if [[ ${GUI_MODE} -eq 1 ]] ; then
    echo "GUI mode"
    lxterminal --working-directory=${HOME}/ --command="${cmd1}" --title="${title1}" --geometry=1600x750 &

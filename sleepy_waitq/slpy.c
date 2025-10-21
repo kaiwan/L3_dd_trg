@@ -32,7 +32,7 @@ static atomic_t data_present = ATOMIC_INIT(0);	/* event condition flag */
 DECLARE_WAIT_QUEUE_HEAD(wq);
 
 static int exclusive_wakeup;
-module_param(exclusive_wakeup, int, 0);
+module_param(exclusive_wakeup, int, 0644);
 MODULE_PARM_DESC(exclusive_wakeup, "set this to 1 to perform exclusive waiter/wakeups (only 1 sleeper will be awoken at a time);"
 "default (0) is that all sleepers are awoken immd");
 
@@ -89,12 +89,14 @@ static ssize_t sleepy_read(struct file *filp, char __user *buf, size_t count, lo
 static ssize_t sleepy_write(struct file *filp, const char __user *buf,
 			    size_t count, loff_t *offp)
 {
-	pr_debug("process %d (%s) awakening the readers...\n", current->pid, current->comm);
+	pr_debug("process %d (%s) awakening %s...\n",
+		current->pid, current->comm,
+		(exclusive_wakeup==1?"just 1 reader process (exclusive)":"all reader processes"));
 
 	/* Set the wake-up event condition to True, simulating the
 	 * "data is available" condition... */
 	atomic_set(&data_present, 1);
-	/* and awaken all the lazy sleepy heads :-) */
+	/* and awaken one or all of the lazy sleepy heads :-) */
 	wake_up_interruptible(&wq);
 
 	return count;

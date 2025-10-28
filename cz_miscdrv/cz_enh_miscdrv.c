@@ -205,8 +205,8 @@ static ssize_t czero_write(struct file *filp, const char __user *buf,
  * cnul is designed to be a sink; but let's make it useful by ret 0,
  * allowing a file to be truncated!
  */
-static ssize_t cnul_read(struct file *filp, char __user * buf,
-			 size_t count, loff_t * offp)
+static ssize_t cnul_read(struct file *filp, char __user *buf,
+			 size_t count, loff_t *offp)
 {
 	pr_debug("process %s [pid %d], count=%zu\n",
 	    current->comm, current->pid, count);
@@ -223,11 +223,11 @@ static ssize_t cnul_read(struct file *filp, char __user * buf,
 }
 
 /* 
-The signature of the driver 'method' is IDENTICAL to the file_operations member..
-ssize_t (*write) (struct file *, const char __user *, size_t, loff_t *); 
-*/
-static ssize_t cnul_write(struct file *filp, const char __user * buf,
-			  size_t count, loff_t * offp)
+ * The signature of the driver 'method' is IDENTICAL to the file_operations member..
+ * ssize_t (*write) (struct file *, const char __user *, size_t, loff_t *);
+ */
+static ssize_t cnul_write(struct file *filp, const char __user *buf,
+			  size_t count, loff_t *offp)
 {
 	pr_debug("process %s [pid %d], count=%zu\n\tjiffies=%lu\n",
 	    current->comm, current->pid, count, jiffies);

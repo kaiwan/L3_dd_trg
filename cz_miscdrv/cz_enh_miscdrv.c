@@ -61,8 +61,7 @@
  * 1. revoke the printk's (by undefining DEBUG)
  * 2. comment out the test to see if we should invoke the sceduler, on each loop iteration.
  */
-static ssize_t czero_read(struct file *filp, char __user *buf,
-			  size_t count, loff_t *offp)
+static ssize_t czero_read(struct file *filp, char __user *buf, size_t count, loff_t *offp)
 {
 	char *zbuf;
 	unsigned long buf_to = 0;
@@ -73,7 +72,7 @@ static ssize_t czero_read(struct file *filp, char __user *buf,
 	 * ssize_t use %zd
 	 */
 	pr_debug("process %s [pid %d] to read %zu bytes; buf=0x%lx\n",
-	    current->comm, current->pid, count, (unsigned long)buf);
+		 current->comm, current->pid, count, (unsigned long)buf);
 
 	if (count > PAGE_SIZE)
 		mcount = PAGE_SIZE;
@@ -101,12 +100,12 @@ static ssize_t czero_read(struct file *filp, char __user *buf,
 #if (FILL_PATTERN == 1)
 	/* lets fill it with 'deadface' ! */
 	for (i = 0; i < mcount / 4; i++) {
-#ifndef __BIG_ENDIAN	 // little-endian
+#ifndef __BIG_ENDIAN		// little-endian
 		zbuf[(i * 4) + 0] = 0xde;
 		zbuf[(i * 4) + 1] = 0xad;
 		zbuf[(i * 4) + 2] = 0xfa;
 		zbuf[(i * 4) + 3] = 0xce;
-#else	 // big-endian
+#else				// big-endian
 		zbuf[(i * 4) + 0] = 0xce;
 		zbuf[(i * 4) + 1] = 0xfa;
 		zbuf[(i * 4) + 2] = 0xad;
@@ -130,9 +129,8 @@ static ssize_t czero_read(struct file *filp, char __user *buf,
 #if 0
 #ifndef CONFIG_PREEMPT
 		if ((!(i % 100))
-		    &&
-		    unlikely(test_tsk_thread_flag(current, TIF_NEED_RESCHED)))
-				schedule();
+		    && unlikely(test_tsk_thread_flag(current, TIF_NEED_RESCHED)))
+			schedule();
 #endif
 #endif
 	}
@@ -157,7 +155,7 @@ static ssize_t czero_read(struct file *filp, char __user *buf,
 
 #if 0
 static ssize_t czero_read_onepage(struct file *filp, char __user *buf,
-			  size_t count, loff_t *offp)
+				  size_t count, loff_t *offp)
 {
 	char *zbuf;
 	int status;
@@ -176,7 +174,7 @@ static ssize_t czero_read_onepage(struct file *filp, char __user *buf,
 	 * ssize_t use %zd
 	 */
 	pr_debug("process %s [pid %d] to read %zu bytes\n",
-	    current->comm, current->pid, count);
+		 current->comm, current->pid, count);
 
 	if (copy_to_user(buf, zbuf, count)) {
 		status = -EFAULT;
@@ -195,9 +193,8 @@ static ssize_t czero_read_onepage(struct file *filp, char __user *buf,
 static ssize_t czero_write(struct file *filp, const char __user *buf,
 			   size_t count, loff_t *offp)
 {
-	pr_debug("process %s [pid %d], count=%zu\n",
-	    current->comm, current->pid, count);
-	return -ENOSYS; // 'Function not implemented'
+	pr_debug("process %s [pid %d], count=%zu\n", current->comm, current->pid, count);
+	return -ENOSYS;		// 'Function not implemented'
 }
 
 /* ----------The cnul_* functionality routines
@@ -205,11 +202,9 @@ static ssize_t czero_write(struct file *filp, const char __user *buf,
  * cnul is designed to be a sink; but let's make it useful by ret 0,
  * allowing a file to be truncated!
  */
-static ssize_t cnul_read(struct file *filp, char __user *buf,
-			 size_t count, loff_t *offp)
+static ssize_t cnul_read(struct file *filp, char __user *buf, size_t count, loff_t *offp)
 {
-	pr_debug("process %s [pid %d], count=%zu\n",
-	    current->comm, current->pid, count);
+	pr_debug("process %s [pid %d], count=%zu\n", current->comm, current->pid, count);
 
 	/* as Linux does it, return 0 */
 	return 0;
@@ -222,7 +217,7 @@ static ssize_t cnul_read(struct file *filp, char __user *buf,
 	 */
 }
 
-/* 
+/*
  * The signature of the driver 'method' is IDENTICAL to the file_operations member..
  * ssize_t (*write) (struct file *, const char __user *, size_t, loff_t *);
  */
@@ -230,20 +225,20 @@ static ssize_t cnul_write(struct file *filp, const char __user *buf,
 			  size_t count, loff_t *offp)
 {
 	pr_debug("process %s [pid %d], count=%zu\n\tjiffies=%lu\n",
-	    current->comm, current->pid, count, jiffies);
+		 current->comm, current->pid, count, jiffies);
 	return count;
 	/* a write() to the nul device should always succeed! */
 }
 
-
 /* The 'null' device as a char 'misc' device */
 static const struct file_operations cz_cnul_misc_fops = {
-#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 0, 0) // commit 868941b
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 0, 0)	// commit 868941b
 	.llseek = no_llseek,
 #endif
 	.read = cnul_read,
 	.write = cnul_write,
 };
+
 static struct miscdevice cz_cnul_miscdev = {
 	.minor = MISC_DYNAMIC_MINOR,	/* kernel dynamically assigns a free minor# */
 	.name = "cnul_miscdev",	/* when misc_register() is invoked, the kernel
@@ -255,18 +250,19 @@ static struct miscdevice cz_cnul_miscdev = {
 
 /* The 'zero' device as a char 'misc' device */
 static const struct file_operations cz_czero_misc_fops = {
-#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 0, 0) // commit 868941b
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 0, 0)	// commit 868941b
 	.llseek = no_llseek,
 #endif
 	.read = czero_read,
 	.write = czero_write,
 };
+
 static struct miscdevice cz_czero_miscdev = {
 	.minor = MISC_DYNAMIC_MINOR,	/* kernel dynamically assigns a free minor# */
 	.name = "czero_miscdev",	/* when misc_register() is invoked, the kernel
-				 * will auto-create device file as /dev/czero_miscdev ;
-				 * also populated within /sys/class/misc/ and /sys/devices/virtual/misc/ */
-	.mode = 0666,			/* ... dev node perms set as specified here */
+					 * will auto-create device file as /dev/czero_miscdev ;
+					 * also populated within /sys/class/misc/ and /sys/devices/virtual/misc/ */
+	.mode = 0666,		/* ... dev node perms set as specified here */
 	.fops = &cz_czero_misc_fops,	/* connect to this driver's 'functionality' */
 };
 
@@ -285,7 +281,7 @@ static int __init cz_init_module(void)
 	}
 	dev = cz_czero_miscdev.this_device;
 	dev_info(dev, "cz czero misc driver (major # 10) registered, minor# = %d,"
-		" dev node is /dev/%s\n", cz_czero_miscdev.minor, cz_czero_miscdev.name);
+		 " dev node is /dev/%s\n", cz_czero_miscdev.minor, cz_czero_miscdev.name);
 
 	ret = misc_register(&cz_cnul_miscdev);
 	if (ret != 0) {
@@ -293,7 +289,7 @@ static int __init cz_init_module(void)
 		return ret;
 	}
 	dev_info(dev, "cz cnul misc driver (major # 10) registered, minor# = %d,"
-		" dev node is /dev/%s\n", cz_cnul_miscdev.minor, cz_cnul_miscdev.name);
+		 " dev node is /dev/%s\n", cz_cnul_miscdev.minor, cz_cnul_miscdev.name);
 
 	return 0;		/* success */
 }

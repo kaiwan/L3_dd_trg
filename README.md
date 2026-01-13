@@ -45,10 +45,15 @@ Practically, **it's important that, bare minimum, you try out in a hands-on mann
 Though not mandatory, it will help tremendously if you have matching (or close) hardware to what will be taught and demonstrated during the course, thus allowing you to get an awesome hands-on experience:
 An embedded target board, a **Single Board Computer (SBC)**; *any one of these is fine*:
   - **Raspberry Pi** (any model: Pi Zero, 3B, 4 or 5) ; f.e., [Buy Raspberry Pi  Model 4B](https://robu.in/product/raspberry-pi-4-model-b-with-2-gb-ram/?gad_source=1&gad_campaignid=19974686076&gclid=CjwKCAiA95fLBhBPEiwATXUsxEPqE-CULNrikSsWpAHbdnJgmfJ0pPNGYA_uCGqKIH8Nauk-EQSxnBoCjSkQAvD_BwE)
+  
   <img src="img/rpi4b.png" alt="RPi Model 4B" width="300">
+  
   - **TI BeagleBone Black (Aarch32)** [Buy](https://robu.in/product/beaglebone-black-rev-c/?gad_source=1&gad_campaignid=17413441824&gclid=CjwKCAiA95fLBhBPEiwATXUsxMBen3ml-z1AWmhhFxl0BkPgq2geHqvOff2-EQH0ta5qzO8G78emdRoCyfAQAvD_BwE)
+ 
   <img src="img/ti-bbb.png" alt="TI BBB" width="300">
+  
   - **TI PocketBeagle 2 (Aarch64)** [Buy](https://robu.in/product/beagleboard-pocketbeagle-2-p-n-102110780-sbc/?gad_source=1&gad_campaignid=17413441824&gclid=CjwKCAiA95fLBhBPEiwATXUsxC0lj6wPSNFyrJQlmac1IU_W5oXRubSN9JsVNIJYsStA5iP3EV6YhhoC1Q8QAvD_BwE)
+  
   <img src="img/ti-pocketbgl2.png" alt="TI PocketBeagle 2" width="300">
   - We expect you have the USB/power cable, microSD card, with the OS pre-installed on it. (If unaware, just Google for resources related to stuff like this.)
 

@@ -1,7 +1,7 @@
 # The kaiwanTECH 'Writing Linux Device Drivers' Training Course
 This GitHub repo (and a few others) contain the prereqs, lab setup (hardware & software), and the reference source code for this course.
 
-## IMPORTANT : Participant PREREQUSITES !**
+## IMPORTANT : Participant PREREQUSITES !
   - Successfully completed the 'Linux Kernel Internals & Module Development' (L2-LVC) course -or- have the equivalent skill sets: at a minimum: Linux OS architecture, basics of writing a Loadable Kernel Module (LKM), clear VM concepts, kernel memory (de)alloc APIs, at least the basic kernel synchronization mechanisms (mutex & spinlock), etc
   - Good working knowledge of the 'C' programming language
   - Optional / Advantageous: Experience working in kernel-space and/or embedded Linux helps.
@@ -43,7 +43,7 @@ Practically, **it's important that, bare minimum, you try out in a hands-on mann
 #### Embedded board (SBC) and other hardware
 
 Though not mandatory, it will help tremendously if you have matching (or close) hardware to what will be taught and demonstrated during the course, thus allowing you to get an awesome hands-on experience:
-- An embedded target board, a **Single Board Computer (SBC)**; *any one of these is fine*:
+An embedded target board, a **Single Board Computer (SBC)**; *any one of these is fine*:
   - **Raspberry Pi** (any model: Pi Zero, 3B, 4 or 5) ; f.e., **[Raspberry Pi  Model 4B]**(https://robu.in/product/raspberry-pi-4-model-b-with-2-gb-ram/?gad_source=1&gad_campaignid=19974686076&gclid=CjwKCAiA95fLBhBPEiwATXUsxEPqE-CULNrikSsWpAHbdnJgmfJ0pPNGYA_uCGqKIH8Nauk-EQSxnBoCjSkQAvD_BwE)
   <img src="img/rpi4b.png" alt="RPi Model 4B" width="300">
   - **[TI BeagleBone Black (Aarch32)](https://robu.in/product/beaglebone-black-rev-c/?gad_source=1&gad_campaignid=17413441824&gclid=CjwKCAiA95fLBhBPEiwATXUsxMBen3ml-z1AWmhhFxl0BkPgq2geHqvOff2-EQH0ta5qzO8G78emdRoCyfAQAvD_BwE)**

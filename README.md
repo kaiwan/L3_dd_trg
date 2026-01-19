@@ -47,15 +47,22 @@ An embedded target board, a **Single Board Computer (SBC)**; *any one of these i
   - **Raspberry Pi** (any model: Pi Zero, 3B, 4 or 5) ; f.e., [Buy Raspberry Pi  Model 4B](https://robu.in/product/raspberry-pi-4-model-b-with-2-gb-ram/?gad_source=1&gad_campaignid=19974686076&gclid=CjwKCAiA95fLBhBPEiwATXUsxEPqE-CULNrikSsWpAHbdnJgmfJ0pPNGYA_uCGqKIH8Nauk-EQSxnBoCjSkQAvD_BwE)
   
   <img src="img/rpi4b.png" alt="RPi Model 4B" width="300">
+
+  [Detailed Guide: Getting started with your Raspberry Pi](https://www.raspberrypi.com/documentation/computers/getting-started.html)
   
   - **TI BeagleBone Black (Aarch32)** [Buy](https://robu.in/product/beaglebone-black-rev-c/?gad_source=1&gad_campaignid=17413441824&gclid=CjwKCAiA95fLBhBPEiwATXUsxMBen3ml-z1AWmhhFxl0BkPgq2geHqvOff2-EQH0ta5qzO8G78emdRoCyfAQAvD_BwE)
  
   <img src="img/ti-bbb.png" alt="TI BBB" width="300">
+
+  [TI Beagle boards: Getting Started Guides](https://www.beagleboard.org/getting-started)
   
   - **TI PocketBeagle 2 (Aarch64)** [Buy](https://robu.in/product/beagleboard-pocketbeagle-2-p-n-102110780-sbc/?gad_source=1&gad_campaignid=17413441824&gclid=CjwKCAiA95fLBhBPEiwATXUsxC0lj6wPSNFyrJQlmac1IU_W5oXRubSN9JsVNIJYsStA5iP3EV6YhhoC1Q8QAvD_BwE)
   
   <img src="img/ti-pocketbgl2.png" alt="TI PocketBeagle 2" width="300">
-  - We expect you have the USB/power cable, microSD card, with the OS pre-installed on it. (If unaware, just Google for resources related to stuff like this.)
+
+  [TI Beagle boards: Getting Started Guides](https://www.beagleboard.org/getting-started)
+  
+  - **We expect you have the USB/power cable, microSD card, with the OS pre-installed on it.** (If unaware, just Google for resources related to stuff like this.)
 
 You will learn to write Linux device drivers for these sensors/devices (among other driver types. Note that the suggested links below are India-centric, you can of course purchase these from any preferred appropriate e-comm site or store):
 - [DHT22 Digital Temperature & Humidity Sensor](https://robu.in/product/dht22-am2302-digital-temperature-humidity-sensor/) 

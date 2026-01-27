@@ -4,6 +4,8 @@
 #include <linux/hdreg.h> /* for HDIO_GETGEO */
 #include <linux/cdrom.h> /* for CDROM_GET_CAPABILITY */
 #include <linux/version.h>
+#include <linux/blk-mq.h>
+#include <linux/blkdev.h>
 #include "device.h"
 
 #ifdef CONFIG_SBLKDEV_REQUESTS_BASED
@@ -276,7 +278,8 @@ static inline int init_tag_set(struct blk_mq_tag_set *set, void *data)
 	set->nr_maps = 1;
 	set->queue_depth = 128;
 	set->numa_node = NUMA_NO_NODE;
-	set->flags = BLK_MQ_F_SHOULD_MERGE | BLK_MQ_F_STACKING;
+	set->flags = BLK_MQ_F_STACKING;
+	//set->flags = BLK_MQ_F_SHOULD_MERGE | BLK_MQ_F_STACKING; // not on 6.14?
 
 	set->cmd_size = 0;	// additional bytes to alloc per request
 	set->driver_data = data;
@@ -287,7 +290,7 @@ static inline int init_tag_set(struct blk_mq_tag_set *set, void *data)
 #endif
 
 #ifndef HAVE_BLK_MQ_ALLOC_DISK
-static inline struct gendisk *blk_mq_alloc_disk(struct blk_mq_tag_set *set,
+static inline struct gendisk *blk_mq_alloc_disk(struct blk_mq_tag_set *set, struct queue_limits *lim,
 						void *queuedata)
 {
 	struct gendisk *disk;
@@ -372,7 +375,7 @@ struct sblkdev_device *sblkdev_add(int major, int minor, char *name,
 	 * blk_mq_alloc_queue() and __alloc_disk_node().
 	 * If < 5.14 we have our own implementation of this func...
 	 */
-	disk = blk_mq_alloc_disk(&dev->tag_set, dev);
+	disk = blk_mq_alloc_disk(&dev->tag_set, NULL, dev);
 	if (unlikely(!disk)) {
 		ret = -ENOMEM;
 		pr_err("Failed to allocate disk (1)\n");
@@ -427,10 +430,13 @@ struct sblkdev_device *sblkdev_add(int major, int minor, char *name,
 	blk_queue_io_min(disk->queue, CONFIG_SBLKDEV_BLOCK_SIZE);
 	blk_queue_io_opt(disk->queue, CONFIG_SBLKDEV_BLOCK_SIZE);
 #else
-	blk_queue_physical_block_size(disk->queue, SECTOR_SIZE);
-	blk_queue_logical_block_size(disk->queue, SECTOR_SIZE);
+	queue_physical_block_size(disk->queue);
+	//blk_queue_physical_block_size(disk->queue, SECTOR_SIZE);  // not on 6.14?
+	queue_logical_block_size(disk->queue);
+	//blk_queue_logical_block_size(disk->queue, SECTOR_SIZE);   // not on 6.14?
 #endif
-	blk_queue_max_hw_sectors(disk->queue, BLK_SAFE_MAX_SECTORS);
+	queue_max_hw_sectors(disk->queue);
+	//blk_queue_max_hw_sectors(disk->queue, BLK_SAFE_MAX_SECTORS);   // not on 6.14?
 	blk_queue_flag_set(QUEUE_FLAG_NOMERGES, disk->queue);
 
 

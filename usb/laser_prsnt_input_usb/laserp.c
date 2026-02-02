@@ -79,14 +79,15 @@ static void usb_laserpdl_irq(struct urb *urb)
 TODO / RELOOK:
 Sometimes get this ERROR:
 ...
-[  865.106942] mymouse_usb:usb_wimouse_irq(): urb stat=-2
+[  865.106942] ... urb->status=-2
 
 Eliminate it by:
 -checking which is the latest /dev/input/eventN file
 ls -lt /dev/input
-- *read* it via evtest / whatever
+- *read* it via sudo evtest or whatever
 
-Seems to Require that inputX is READ by something/anything, then it works..
+Seems to Require that the /dev/input/eventN file is READ by something/anything,
+THEN it works..
 (this issue has come up on SO, etc)
 */
 
@@ -204,6 +205,12 @@ static int dev_probe(struct usb_interface *intf, const struct usb_device_id *id)
 	if (!input_dev)
 		goto fail2;
 
+	/*
+	 * usb_alloc_coherent - allocate dma-consistent buffer for URB
+	 * void *usb_alloc_coherent(struct usb_device *dev, size_t size, gfp_t mem_flags,
+         *              dma_addr_t *dma)
+	 *  @dma: used to return DMA address of buffer
+	 */
 	laserpdl->data = usb_alloc_coherent(usbdev, 8, GFP_ATOMIC, &laserpdl->data_dma);
 	if (!laserpdl->data)
 		goto fail3;
@@ -288,7 +295,7 @@ static int dev_probe(struct usb_interface *intf, const struct usb_device_id *id)
 	usb_fill_int_urb(laserpdl->irq_urb, usbdev, pipe, laserpdl->data,
 			 (maxp > 8 ? 8 : maxp), usb_laserpdl_irq, laserpdl, endpoint->bInterval);
 	laserpdl->irq_urb->transfer_dma = laserpdl->data_dma;
-	laserpdl->irq_urb->transfer_flags |= URB_NO_TRANSFER_DMA_MAP;
+	laserpdl->irq_urb->transfer_flags |= URB_NO_TRANSFER_DMA_MAP; // urb->transfer_dma valid on submit
 
 	/*
 	 * The driver 'probe' method typically registers with a kernel framework;
@@ -362,7 +369,7 @@ static int usb_laserpdl_open(struct input_dev *dev)
 	 * '...  This submits a transfer request, and transfers control of the URB
 	 * describing that request to the USB subsystem.  Request completion will
 	 * be indicated later, asynchronously, by calling the completion handler. ...'
-	 * So, here, this will result in our 'irq handler - usb_laserpdl_irq() -
+	 * So, here, this will result in our 'irq handler' - usb_laserpdl_irq() -
 	 * being asynchronously invoked!
 	 * IOW, this is the 'request' portion of the USB URB request-response mechanism
 	 * (the 'IRQ handler' is of course the 'response' portion)

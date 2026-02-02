@@ -64,9 +64,9 @@ An embedded target board, a **Single Board Computer (SBC)**; *any one of these i
   
   - **We expect you have the USB/power cable, microSD card, with the OS pre-installed on it.** (If unaware, just Google for resources related to stuff like this.)
 
-You will learn to write Linux device drivers for these sensors/devices (among other driver types. Note that the suggested links below are India-centric, you can of course purchase these from any preferred appropriate e-comm site or store):
-- [DHT22 Digital Temperature & Humidity Sensor](https://robu.in/product/dht22-am2302-digital-temperature-humidity-sensor/) 
-  <img src="img/dht22.png" alt="DHT22" width="150">
+You will learn to write Linux device drivers for these sensors/devices (among other driver types. Note that the suggested links below are India-centric, you can of course purchase these from any preferred / appropriate e-comm site or store):
+- [DHT20 I2C Digital Temperature & Humidity Sensor](https://robu.in/product/temperature-and-humidity-sensor-model-dht20/)
+  <img src="img/dht20.png" alt="DHT22" width="150">
 - [OLED SSD1306 display module](https://robu.in/product/0-96-inch-yellow-yellow-blue-oled-lcd-led-display-module/#tab-specification)
   <img src="img/ssd1306_oled.png" alt="SSD1306 OLED" width="150">
         

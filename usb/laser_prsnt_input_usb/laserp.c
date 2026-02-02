@@ -198,13 +198,15 @@ static int dev_probe(struct usb_interface *intf, const struct usb_device_id *id)
 #endif
 
 	laserpdl = kzalloc(sizeof(struct usb_laserpdl), GFP_KERNEL);
+	if (!laserpdl)
+		goto fail1;
 	input_dev = input_allocate_device();
 	if (!input_dev)
-		goto fail1;
+		goto fail2;
 
 	laserpdl->data = usb_alloc_coherent(usbdev, 8, GFP_ATOMIC, &laserpdl->data_dma);
 	if (!laserpdl->data)
-		goto fail1;
+		goto fail3;
 
 	/*
 	 * usb_alloc_urb()
@@ -218,7 +220,7 @@ static int dev_probe(struct usb_interface *intf, const struct usb_device_id *id)
 	 */
 	laserpdl->irq_urb = usb_alloc_urb(0, GFP_KERNEL);
 	if (!laserpdl->irq_urb)
-		goto fail2;
+		goto fail4;
 
 	laserpdl->usbdev = usbdev;
 	laserpdl->dev = input_dev;
@@ -294,7 +296,7 @@ static int dev_probe(struct usb_interface *intf, const struct usb_device_id *id)
 	 */
 	error = input_register_device(laserpdl->dev);
 	if (error)
-		goto fail3;
+		goto fail4;
 
 	usb_set_intfdata(intf, laserpdl);
 
@@ -305,13 +307,14 @@ static int dev_probe(struct usb_interface *intf, const struct usb_device_id *id)
 	 * it verifies things and then submits the URB
 	 */
 
- fail3:
+ fail4:
 	usb_free_urb(laserpdl->irq_urb);
- fail2:
+ fail3:
 	usb_free_coherent(usbdev, 8, laserpdl->data, laserpdl->data_dma);
- fail1:
+ fail2:
 	input_free_device(input_dev);
 	kfree(laserpdl);
+ fail1:
 	return error;
 }
 

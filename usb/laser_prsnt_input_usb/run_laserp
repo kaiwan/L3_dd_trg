@@ -47,7 +47,7 @@ Examples:
 ./run KEY_HOME KEY_END KEY_VOLUMEDOWN KEY_VOLUMEUP
 
 will map the laser device's:
-  top-left    button to KEY_HOME,       top-right    button to END, and the
+  top-left    button to KEY_HOME,       top-right    button to KEY_END, the
   bottom-left button to KEY_VOLUMEDOWN, bottom-right button to KEY_VOLUMEUP
 
 +--------------+------------+

@@ -34,20 +34,23 @@ static void usb_laserpdl_close(struct input_dev *dev);
 // module params
 static int LASER_TOP_LEFT_BTN = KEY_PAGEUP;
 module_param(LASER_TOP_LEFT_BTN, int, 0664);
-MODULE_PARM_DESC(LASER_TOP_LEFT_BTN, "map the laser device's top left button to this key/button");
+MODULE_PARM_DESC(LASER_TOP_LEFT_BTN,
+		 "map the laser device's top left button to this key/button");
 
 static int LASER_TOP_RIGHT_BTN = KEY_PAGEDOWN;
 module_param(LASER_TOP_RIGHT_BTN, int, 0664);
-MODULE_PARM_DESC(LASER_TOP_RIGHT_BTN, "map the laser device's top right button to this key/button");
+MODULE_PARM_DESC(LASER_TOP_RIGHT_BTN,
+		 "map the laser device's top right button to this key/button");
 
 static int LASER_BOTTOM_LEFT_BTN = KEY_UP;
 module_param(LASER_BOTTOM_LEFT_BTN, int, 0664);
-MODULE_PARM_DESC(LASER_BOTTOM_LEFT_BTN, "map the laser device's bottom left button to this key/button");
+MODULE_PARM_DESC(LASER_BOTTOM_LEFT_BTN,
+		 "map the laser device's bottom left button to this key/button");
 
 static int LASER_BOTTOM_RIGHT_BTN = KEY_DOWN;
 module_param(LASER_BOTTOM_RIGHT_BTN, int, 0664);
-MODULE_PARM_DESC(LASER_BOTTOM_RIGHT_BTN, "map the laser device's bottom right button to this key/button");
-
+MODULE_PARM_DESC(LASER_BOTTOM_RIGHT_BTN,
+		 "map the laser device's bottom right button to this key/button");
 
 struct usb_laserpdl {
 	char name[128];
@@ -184,7 +187,7 @@ static int dev_probe(struct usb_interface *intf, const struct usb_device_id *id)
 		interface->desc.bInterfaceNumber, id->idVendor, id->idProduct);
 	pr_info("Number of endpoints: %02X\n", interface->desc.bNumEndpoints);
 	pr_info("Interface class: %02X\n", interface->desc.bInterfaceClass);
-		// here, this is '3' which is 'Human Interface Device' (HID)
+	// here, this is '3' which is 'Human Interface Device' (HID)
 
 	if (interface->desc.bNumEndpoints != 1)
 		return -ENODEV;
@@ -213,7 +216,7 @@ static int dev_probe(struct usb_interface *intf, const struct usb_device_id *id)
 	/*
 	 * usb_alloc_coherent - allocate dma-consistent buffer for URB
 	 * void *usb_alloc_coherent(struct usb_device *dev, size_t size, gfp_t mem_flags,
-         *              dma_addr_t *dma)
+	 *              dma_addr_t *dma)
 	 *  @dma: used to return DMA address of buffer
 	 */
 	laserpdl->data = usb_alloc_coherent(usbdev, 8, GFP_ATOMIC, &laserpdl->data_dma);
@@ -295,19 +298,19 @@ static int dev_probe(struct usb_interface *intf, const struct usb_device_id *id)
 	 * Ref: https://www.kernel.org/doc/html/latest/driver-api/usb/URB.html
 	 *
 	 * void usb_fill_int_urb(struct urb *urb,
-         *                          struct usb_device *dev,
-         *                          unsigned int pipe,
-         *                          void *transfer_buffer,
-         *                          int buffer_length,
-         *                          usb_complete_t complete_fn,
-         *                          void *context,
-         *                          int interval)
+	 *                          struct usb_device *dev,
+	 *                          unsigned int pipe,
+	 *                          void *transfer_buffer,
+	 *                          int buffer_length,
+	 *                          usb_complete_t complete_fn,
+	 *                          void *context,
+	 *                          int interval)
 	 */
 	usb_fill_int_urb(laserpdl->irq_urb, usbdev, pipe, laserpdl->data,
-		(maxp > 8 ? 8 : maxp), usb_laserpdl_irq, laserpdl,
-		endpoint->bInterval);
+			 (maxp > 8 ? 8 : maxp), usb_laserpdl_irq, laserpdl,
+			 endpoint->bInterval);
 	laserpdl->irq_urb->transfer_dma = laserpdl->data_dma;
-	laserpdl->irq_urb->transfer_flags |= URB_NO_TRANSFER_DMA_MAP; // urb->transfer_dma valid on submit
+	laserpdl->irq_urb->transfer_flags |= URB_NO_TRANSFER_DMA_MAP;	// urb->transfer_dma valid on submit
 
 	/*
 	 * The driver 'probe' method typically registers with a kernel framework;
@@ -407,13 +410,15 @@ static struct usb_device_id dev_table[] = {
 	{USB_DEVICE(USB_PROMODISPLAYTECH_VID, USB_PROMODISPLAYTECH_PID)},
 	{}
 };
+
 MODULE_DEVICE_TABLE(usb, dev_table);
 
 static struct usb_driver laserpdl_driver = {
 	.name = "laserp",
 	.id_table = dev_table,
-	.probe = dev_probe,  /* auto-invoked by the USB bus driver as soon as
-			      * the device is detected */
-	.disconnect = dev_disconnect  // ... ditto when disconnected
+	.probe = dev_probe,	/* auto-invoked by the USB bus driver as soon as
+				 * the device is detected */
+	.disconnect = dev_disconnect	// ... ditto when disconnected
 };
+
 module_usb_driver(laserpdl_driver);

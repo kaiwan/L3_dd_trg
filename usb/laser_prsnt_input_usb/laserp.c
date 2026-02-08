@@ -168,11 +168,16 @@ static int dev_probe(struct usb_interface *intf, const struct usb_device_id *id)
 	 *  Device
 	 *    Configuration(s)   // usually only 1 & only 1 active at any time
 	 *      Interface(s)
-	 *        Endpoint(s)
+	 *        [Altsetting(s)]
+	 *           Endpoint(s)
 	 *
 	 * Run
 	 * sudo lsusb [-d <VID>:<PID>] -v
 	 * to see the full picture..
+	 *
+	 * The driver resolves to a particular interface! This interface is not
+	 * necessarily the whole device; f.e. if the USB device has >1 interface,
+	 * say 2, *then probe will be invoked twice, once for each supported interface!*
 	 */
 
 	pr_info("USB interface %d now probed: (%04X:%04X)\n",
@@ -268,16 +273,13 @@ static int dev_probe(struct usb_interface *intf, const struct usb_device_id *id)
 	 *   bottom-left  btn as key-up
 	 *   bottom-right btn as key-dn
 	 * We support module parameters to change any/all of these mappings.
-	 */
-	/*
-	 * Add button events
 	 * See include/uapi/linux/input-event-codes.h
 	 */
-	set_bit(EV_KEY, input_dev->evbit); // type of 'event' is key (press & rel)
-	set_bit(LASER_TOP_LEFT_BTN, input_dev->keybit); // ... and these are the actual keys being mapped
-	set_bit(LASER_TOP_RIGHT_BTN, input_dev->keybit);
-	set_bit(LASER_BOTTOM_LEFT_BTN, input_dev->keybit);
-	set_bit(LASER_BOTTOM_RIGHT_BTN, input_dev->keybit);
+	/* Which events this device supports */
+	input_set_capability(input_dev, EV_KEY, LASER_TOP_LEFT_BTN);
+	input_set_capability(input_dev, EV_KEY, LASER_TOP_RIGHT_BTN);
+	input_set_capability(input_dev, EV_KEY, LASER_BOTTOM_LEFT_BTN);
+	input_set_capability(input_dev, EV_KEY, LASER_BOTTOM_RIGHT_BTN);
 
 	input_set_drvdata(input_dev, laserpdl);
 
@@ -291,9 +293,19 @@ static int dev_probe(struct usb_interface *intf, const struct usb_device_id *id)
 	 * and in it we check if all's ok, processing the data, sending it up to
 	 * the input layer...
 	 * Ref: https://www.kernel.org/doc/html/latest/driver-api/usb/URB.html
+	 *
+	 * void usb_fill_int_urb(struct urb *urb,
+         *                          struct usb_device *dev,
+         *                          unsigned int pipe,
+         *                          void *transfer_buffer,
+         *                          int buffer_length,
+         *                          usb_complete_t complete_fn,
+         *                          void *context,
+         *                          int interval)
 	 */
 	usb_fill_int_urb(laserpdl->irq_urb, usbdev, pipe, laserpdl->data,
-			 (maxp > 8 ? 8 : maxp), usb_laserpdl_irq, laserpdl, endpoint->bInterval);
+		(maxp > 8 ? 8 : maxp), usb_laserpdl_irq, laserpdl,
+		endpoint->bInterval);
 	laserpdl->irq_urb->transfer_dma = laserpdl->data_dma;
 	laserpdl->irq_urb->transfer_flags |= URB_NO_TRANSFER_DMA_MAP; // urb->transfer_dma valid on submit
 

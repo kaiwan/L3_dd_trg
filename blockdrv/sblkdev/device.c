@@ -12,13 +12,23 @@
 
 static inline int process_request(struct request *rq, unsigned int *nr_bytes)
 {
-	int ret = 0;
+	int ret = BLK_STS_OK; // 0
 	struct bio_vec bvec;
 	struct req_iterator iter;
 	struct sblkdev_device *dev = rq->q->queuedata;
 	loff_t pos = blk_rq_pos(rq) << SECTOR_SHIFT;
 	loff_t dev_size = (dev->capacity << SECTOR_SHIFT);
 
+	/*
+	 * The request contains a list of memory pages (bio_vec). 
+	 * In a 'real' driver you must map these to your device's DMA.
+	 * Once ready, submit it to Hardware by writing the command to the
+	 * device's "Doorbell" register or ring buffer.
+	 * Here, we do iterate over all the bio's - and each bio_vec within
+	 * them - calculating the src or dest address and the length; we then
+	 * perform a simple memcpy() (in lieu of DMA) to perform the actual IO,
+	 * the read or write.
+	 */
 	PRINT_CTX();
 	rq_for_each_segment(bvec, rq, iter) {
 		unsigned long len = bvec.bv_len;
@@ -43,6 +53,8 @@ static inline int process_request(struct request *rq, unsigned int *nr_bytes)
  * IMPORTANT:
  * This is where any new request from block IO layer is handled; this is the
  * request queuing logic!
+ * Akin to the "main() function of your driver's data path". It is called when
+ * the block layer has a request ready for hardware.
  */
 static blk_status_t sblkdev_queue_rq(struct blk_mq_hw_ctx *hctx, const struct blk_mq_queue_data *bd)
 {

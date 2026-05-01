@@ -28,23 +28,23 @@ FNAME_C := ds3231
 # To support cross-compiling for kernel modules:
 # For architecture (cpu) 'arch', invoke make as:
 #  make ARCH=<arch> CROSS_COMPILE=<cross-compiler-prefix>
-# The KDIR var is set to a sample path below; you're expected to update it on
+# The KERNEL_SRC var is set to a sample path below; you're expected to update it on
 # your box to the appropriate path to the kernel src tree for that arch.
 ifeq ($(ARCH),arm)
-  # *UPDATE* 'KDIR' below to point to the ARM Linux kernel source tree on your box
-  KDIR ?= ~/rpi_work/kernel_rpi/linux
+  # *UPDATE* 'KERNEL_SRC' below to point to the ARM Linux kernel source tree on your box
+  KERNEL_SRC ?= ~/rpi_work/kernel_rpi/linux
 else ifeq ($(ARCH),arm64)
-  # *UPDATE* 'KDIR' below to point to the ARM64 (Aarch64) Linux kernel source
+  # *UPDATE* 'KERNEL_SRC' below to point to the ARM64 (Aarch64) Linux kernel source
   # tree on your box
-  KDIR ?= ~/kernel/linux-5.4
+  KERNEL_SRC ?= ~/kernel/linux-5.4
 else ifeq ($(ARCH),powerpc)
-  # *UPDATE* 'KDIR' below to point to the PPC64 Linux kernel source tree on your box
-  KDIR ?= ~/kernel/linux-5.0
+  # *UPDATE* 'KERNEL_SRC' below to point to the PPC64 Linux kernel source tree on your box
+  KERNEL_SRC ?= ~/kernel/linux-5.0
 else
-  # 'KDIR' is the Linux 'kernel headers' package on your host system; this is
+  # 'KERNEL_SRC' is the Linux 'kernel headers' package on your host system; this is
   # usually an x86_64, but could be anything, really (f.e. building directly
   # on a Raspberry Pi implies that it's the host)
-  KDIR ?= /lib/modules/$(shell uname -r)/build
+  KERNEL_SRC ?= /lib/modules/$(shell uname -r)/build
 endif
 
 # Compiler
@@ -89,19 +89,19 @@ STRIP := ${CROSS_COMPILE}strip
 
 all:
 	@echo
-	@echo '--- Building : KDIR=${KDIR} ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} ccflags-y=${ccflags-y} ---'
+	@echo '--- Building : KERNEL_SRC=${KERNEL_SRC} ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} ccflags-y=${ccflags-y} ---'
 	@${CC} --version|head -n1
 	@echo
-	make -C $(KDIR) M=$(PWD) modules
+	make -C $(KERNEL_SRC) M=$(PWD) modules
 	$(shell [ "${MYDEBUG}" != "y" ] && ${STRIP} --strip-debug ./${FNAME_C}.ko)
-install:
+modules_install:
 	@echo
 	@echo "--- installing ---"
 	@echo " [First, invoking the 'make' ]"
 	make
 	@echo
-	@echo " [Now for the 'sudo make install' ]"
-	sudo make -C $(KDIR) M=$(PWD) modules_install
+	@echo " [Now for the 'sudo make modules_install' ]"
+	sudo make -C $(KERNEL_SRC) M=$(PWD) modules_install
 	sudo depmod
 	@echo " [If !debug, stripping debug info from ${KMODDIR}/extra/${FNAME_C}.ko]"
 	$(shell if [ "${MYDEBUG}" != "y" ]; then sudo ${STRIP} --strip-debug ${KMODDIR}/extra/${FNAME_C}.ko; fi)
@@ -109,7 +109,7 @@ clean:
 	@echo
 	@echo "--- cleaning ---"
 	@echo
-	make -C $(KDIR) M=$(PWD) clean
+	make -C $(KERNEL_SRC) M=$(PWD) clean
 # from 'indent'
 	rm -f *~
 
@@ -140,7 +140,7 @@ checkpatch:
 	@echo
 	@echo "--- kernel code style check with checkpatch.pl ---"
 	@echo
-	$(KDIR)/scripts/checkpatch.pl --no-tree -f --max-line-length=95 *.[ch]
+	$(KERNEL_SRC)/scripts/checkpatch.pl --no-tree -f --max-line-length=95 *.[ch]
 	  # add source files as required
 
 #--- Static Analysis
@@ -159,7 +159,7 @@ sa_sparse:
 	@echo
 # if you feel it's too much, use C=1 instead
 # NOTE: deliberately IGNORING warnings from kernel headers!
-	make -Wsparse-all C=2 CHECK="/usr/bin/sparse --os=linux --arch=$(ARCH)" -C $(KDIR) M=$(PWD) modules 2>&1 |egrep -v "^\./include/.*\.h|^\./arch/.*\.h"
+	make -Wsparse-all C=2 CHECK="/usr/bin/sparse --os=linux --arch=$(ARCH)" -C $(KERNEL_SRC) M=$(PWD) modules 2>&1 |egrep -v "^\./include/.*\.h|^\./arch/.*\.h"
 
 # static analysis with gcc
 sa_gcc:
@@ -167,7 +167,7 @@ sa_gcc:
 	@echo
 	@echo "--- static analysis with gcc ---"
 	@echo
-	make W=1 -C $(KDIR) M=$(PWD) modules
+	make W=1 -C $(KERNEL_SRC) M=$(PWD) modules
 
 # static analysis with flawfinder
 sa_flawfinder:
@@ -207,7 +207,7 @@ help:
 
 	@echo '--- 'usual' kernel LKM targets ---'
 	@echo 'typing "make" or "all" target : builds the kernel module object (the .ko)'
-	@echo 'install     : installs the kernel module(s) to INSTALL_MOD_PATH (default here: /lib/modules/$(shell uname -r)/)'
+	@echo 'modules_install : installs the kernel module(s) to INSTALL_MOD_PATH (default here: /lib/modules/$(shell uname -r)/)'
 	@echo 'clean       : cleanup - remove all kernel objects, temp files/dirs, etc'
 
 	@echo

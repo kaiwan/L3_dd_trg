@@ -55,23 +55,23 @@ endif
 #  export CROSS_COMPILE=<cross-compiler-prefix>
 #  make
 #
-# The KDIR var is set to a sample path below; you're expected to update it on
+# The KERNEL_SRC var is set to a sample path below; you're expected to update it on
 # your box to the appropriate path to the kernel source tree for that arch.
 ifeq ($(ARCH),arm)
-  # *UPDATE* 'KDIR' below to point to the ARM Linux kernel source tree on your box
-  KDIR ?= ~/arm_prj/kernel/linux
+  # *UPDATE* 'KERNEL_SRC' below to point to the ARM Linux kernel source tree on your box
+  KERNEL_SRC ?= ~/arm_prj/kernel/linux
 else ifeq ($(ARCH),arm64)
-  # *UPDATE* 'KDIR' below to point to the ARM64 (AArch64) Linux kernel source
+  # *UPDATE* 'KERNEL_SRC' below to point to the ARM64 (AArch64) Linux kernel source
   # tree on your box
-  KDIR ?= /xtra/rpi_work/rpi_64bit/kernel_rpi/linux/
+  KERNEL_SRC ?= /xtra/rpi_work/rpi_64bit/kernel_rpi/linux/
 else ifeq ($(ARCH),powerpc)
-  # *UPDATE* 'KDIR' below to point to the PPC64 Linux kernel source tree on your box
-  KDIR ?= ~/ppc_prj/kernel/linux-5.4
+  # *UPDATE* 'KERNEL_SRC' below to point to the PPC64 Linux kernel source tree on your box
+  KERNEL_SRC ?= ~/ppc_prj/kernel/linux-5.4
 else
-  # 'KDIR' is the Linux 'kernel headers' package on your host system; this is
+  # 'KERNEL_SRC' is the Linux 'kernel headers' package on your host system; this is
   # usually an x86_64, but could be anything, really (f.e. building directly
   # on a Raspberry Pi implies that it's the host)
-  KDIR ?= /lib/modules/$(shell uname -r)/build
+  KERNEL_SRC ?= /lib/modules/$(shell uname -r)/build
 endif
 #---
 
@@ -109,7 +109,7 @@ ccflags-y   += -DDYNAMIC_DEBUG_MODULE
 KMODDIR ?= /lib/modules/$(shell uname -r)
 
 # Gain access to kernel configs (the '-' says 'continue on error')
--include $(KDIR)/.config
+-include $(KERNEL_SRC)/.config
 
 # Strip the module? Note:
 # a) Only strip debug symbols else it won't load correctly
@@ -128,15 +128,15 @@ endif
 all:
 	@echo
 	@echo -n "\e[1m\e[41m"
-	@echo '--- Building : KDIR=${KDIR} ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} ccflags-y="${ccflags-y}" KEEP_DEBUG_INFO=${KEEP_DEBUG_INFO} DBG_STRIP=${DBG_STRIP} ---'
+	@echo '--- Building : KERNEL_SRC=${KERNEL_SRC} ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} ccflags-y="${ccflags-y}" KEEP_DEBUG_INFO=${KEEP_DEBUG_INFO} DBG_STRIP=${DBG_STRIP} ---'
 	@echo -n "\e[0m"
 	@${CC} --version|head -n1
 	@echo
-	make -C $(KDIR) M=$(PWD) modules
+	make -C $(KERNEL_SRC) M=$(PWD) modules
 	if [ "${DBG_STRIP}" = "y" ]; then \
 	   ${STRIP} --strip-debug ${FNAME_C}.ko ; \
 	fi
-install:
+modules_install:
 	@echo
 	@echo -n "\e[1m\e[41m"
 	@echo "--- installing ---"
@@ -145,9 +145,9 @@ install:
 	make
 	@echo
 	@echo -n "\e[1m\e[34m"
-	@echo " [Now for the 'sudo make install' ]"
+	@echo " [Now for the 'sudo make modules_install' ]"
 	@echo -n "\e[0m"
-	sudo make -C $(KDIR) M=$(PWD) modules_install
+	sudo make -C $(KERNEL_SRC) M=$(PWD) modules_install
 	sudo depmod
 	@echo " [If !debug and !(module signing), stripping debug info from ${KMODDIR}/extra/${FNAME_C}.ko]"
 	if [ "${DBG_STRIP}" = "y" ]; then \
@@ -166,14 +166,14 @@ nsdeps:
 	@echo -n "\e[1m\e[41m"
 	@echo "--- nsdeps (namespace dependencies resolution; for possibly importing ns's) ---"
 	@echo -n "\e[0m"
-	make -C $(KDIR) M=$(PWD) nsdeps
+	make -C $(KERNEL_SRC) M=$(PWD) nsdeps
 clean:
 	@echo
 	@echo -n "\e[1m\e[41m"
 	@echo "--- cleaning ---"
 	@echo -n "\e[0m"
 	@echo
-	make -C $(KDIR) M=$(PWD) clean
+	make -C $(KERNEL_SRC) M=$(PWD) clean
 # from 'indent'; comment out if you want the backup kept
 	rm -f *.dtb *.dtbo
 
@@ -216,7 +216,7 @@ checkpatch:
 	@echo "--- kernel code style check with checkpatch.pl ---"
 	@echo -n "\e[0m"
 	@echo
-	-$(KDIR)/scripts/checkpatch.pl --no-tree -f --max-line-length=95 *.[ch]
+	-$(KERNEL_SRC)/scripts/checkpatch.pl --no-tree -f --max-line-length=95 *.[ch]
 	  # add source files as required
 
 #--- Static Analysis
@@ -254,7 +254,7 @@ endif
 	@echo
 # If you feel it's too much, use C=1 instead
 # NOTE: deliberately IGNORING warnings from kernel headers!
-	-make -Wsparse-all C=2 CHECK="/usr/bin/sparse --os=linux --arch=$(ARCH)" -C $(KDIR) M=$(PWD) modules 2>&1 |egrep -v "^\./include/.*\.h|^\./arch/.*\.h"
+	-make -Wsparse-all C=2 CHECK="/usr/bin/sparse --os=linux --arch=$(ARCH)" -C $(KERNEL_SRC) M=$(PWD) modules 2>&1 |egrep -v "^\./include/.*\.h|^\./arch/.*\.h"
 
 # static analysis with gcc
 sa_gcc:
@@ -264,7 +264,7 @@ sa_gcc:
 	@echo "--- static analysis with gcc ---"
 	@echo -n "\e[0m"
 	@echo
-	-make W=1 -C $(KDIR) M=$(PWD) modules
+	-make W=1 -C $(KERNEL_SRC) M=$(PWD) modules
 
 # static analysis with flawfinder
 sa_flawfinder:
@@ -313,14 +313,14 @@ help:
 	@echo -n "\e[0m"
 	@echo
 	@echo 'TIP: Type make <tab><tab> to show all valid targets'
-	@echo 'FYI: KDIR=${KDIR} ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} ccflags-y="${ccflags-y}" KEEP_DEBUG_INFO=${KEEP_DEBUG_INFO} DBG_STRIP=${DBG_STRIP}'
+	@echo 'FYI: KERNEL_SRC=${KERNEL_SRC} ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} ccflags-y="${ccflags-y}" KEEP_DEBUG_INFO=${KEEP_DEBUG_INFO} DBG_STRIP=${DBG_STRIP}'
 
 	@echo
 	@echo -n "\e[1m\e[34m"
 	@echo '--- 'usual' kernel LKM targets ---'
 	@echo -n "\e[0m"
 	@echo 'typing "make" or "all" target : builds the kernel module object (the .ko)'
-	@echo 'install     : installs the kernel module(s) to INSTALL_MOD_PATH (default here: /lib/modules/$(shell uname -r)/).'
+	@echo 'modules_install : installs the kernel module(s) to INSTALL_MOD_PATH (default here: /lib/modules/$(shell uname -r)/).'
 	@echo '            : Takes care of performing debug-only symbols stripping iff KEEP_DEBUG_INFO=n and not using module signature'
 	@echo 'dt          : compiles the Device Tree Blob (DTB) from the DTS file (applicable to ARM, PPC, RISC-V, etc)'
 	@echo 'nsdeps      : namespace dependencies resolution; for possibly importing namespaces'

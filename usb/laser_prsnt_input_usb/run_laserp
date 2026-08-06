@@ -3,6 +3,25 @@
 #
 # TODO / RELOOK:
 # requires rebuild & reinstall on every OS update.. need to use DKMS (Dyn Kernel Module Support)
+#
+#-----------------------------------------------------------------------------------------
+# FYI: startup snippet in my 0setup.bash
+#-----------------------------------------------------------------------------------------
+# Load & setup our USB laser pointer device if it's present
+#[ ${SHORT_UPTM} -eq 1 ] && {
+#  echo ">>> USB Laser Pointer device setup"
+#  # UPDATE path as reqd
+#  #/home/kaiwan/gitL3/usb/laser_prsnt_input_usb/run_laserp
+#  ~/laserp_run KEY_PAGEUP KEY_PAGEDOWN KEY_F13 KEY_DOWN
+#  # 06Aug2026
+#  # Q> why is bottom-left set to F13?
+#  # A> To remap it to Alt-tab !
+#  # On GNOME desktop (Wayland):
+#  #  gsettings set org.gnome.settings-daemon.plugins.media-keys control-center "[]"
+#  #  gsettings set org.gnome.desktop.wm.keybindings switch-windows "['XF86Tools']"
+#  #    Ref: claude: https://claude.ai/share/1647a86e-4ee9-473d-bb3b-859cb8ac3701  [pvt]
+#}
+#-----------------------------------------------------------------------------------------
 name=$(basename $0)
 
 KMOD=laserp
@@ -11,13 +30,14 @@ KHDR_ABS=/lib/modules/$(uname -r)/build/${KHDR}
 
 DEFAULT_BTN_MAPPING="   Top-left button     : KEY_PAGEUP
    Top-right button    : KEY_PAGEDOWN
-   Bottom-left button  : KEY_UP
+   Bottom-left button  : KEY_F13
    Bottom-right button : KEY_DOWN
 +--------------+------------+
 |  KEY_PAGEUP  |KEY_PAGEDOWN|
 +--------------+------------+
 |    KEY_UP    |  KEY_DOWN  |
 +--------------+------------+"
+#   Bottom-left button  : KEY_UP
 
 die()
 {
@@ -44,7 +64,7 @@ NOTE! pl just pass the symbolic name; this helper will map it to the numeric val
 
 Examples:
 
-./run KEY_HOME KEY_END KEY_VOLUMEDOWN KEY_VOLUMEUP
+${name} KEY_HOME KEY_END KEY_VOLUMEDOWN KEY_VOLUMEUP
 
 will map the laser device's:
   top-left    button to KEY_HOME,       top-right    button to KEY_END, the
@@ -136,7 +156,7 @@ lsmod|grep ${MY_DRIVER} >/dev/null || {
      NOT_INSTALLED=1
      ls /lib/modules/$(uname -r)/extra/${MY_DRIVER}.ko* >/dev/null 2>&1 && NOT_INSTALLED=0
   }
-  [[ ${NOT_INSTALLED} -eq 1 ]] && (cd ${MY_DRIVER_LOC} ; sudo make install)
+  [[ ${NOT_INSTALLED} -eq 1 ]] && (cd ${MY_DRIVER_LOC} ; sudo make modules_install)
   sudo modprobe ${MY_DRIVER} ${KMOD_PARAMS} || die "modprobe ${MY_DRIVER} failed? Install your \"${MY_DRIVER}\" driver first and retry"
 }
 echo "Running the 'rebind' script ..."
